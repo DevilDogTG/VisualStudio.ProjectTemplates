@@ -19,6 +19,15 @@ namespace Template.WebApiMSSQL.Controllers
         [HttpGet]
         public IEnumerable<WeatherForecast> Get()
         {
+            try
+            {
+                logger.LogInformation("Logging with double qoute \"here\"");
+                throw new Exception("Error in WeatherForecastController");
+            } catch (Exception ex)
+            {
+                logger.LogError(ex, "Error in WeatherForecastController");
+            }
+            
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
                 Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
