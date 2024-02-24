@@ -5,18 +5,15 @@ namespace Template.WebApiMSSQL.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class WeatherForecastController : BaseController
+    public class WeatherForecastController : DefaultControllerBase
     {
         private static readonly string[] Summaries = new[]
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
 
-        private readonly ILogger<WeatherForecastController> _logger;
-
-        public WeatherForecastController(IConfigurationModel config, ILogger<WeatherForecastController> logger) : base(config)
+        public WeatherForecastController(ILogger<WeatherForecastController> _logger, IConfigurationModel _config) : base(_logger, _config)
         {
-            _logger = logger;
         }
 
         [HttpGet]
