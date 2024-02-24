@@ -1,6 +1,4 @@
-using Microsoft.Extensions.Logging;
 using Serilog;
-using Serilog.Core;
 using Template.WebApiMSSQL.Constraints;
 using Template.WebApiMSSQL.Middlewares;
 using Template.WebApiMSSQL.Models;
