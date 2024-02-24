@@ -1,5 +1,6 @@
 using Serilog;
 using Template.WebApiMSSQL.Constraints;
+using Template.WebApiMSSQL.Middlewares;
 using Template.WebApiMSSQL.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,10 +14,23 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+//Configure Performance Logging
+var perfLog = new LoggerConfiguration()
+    .WriteTo.File(
+        path: config.PerformanceLog.Path,
+        rollingInterval: RollingInterval.Day,
+        outputTemplate: "{Message:lj}{NewLine}")
+    .CreateLogger();
+var loggerFactory = LoggerFactory.Create(builder => builder.AddSerilog(perfLog));
+var perfLogger = loggerFactory.CreateLogger<PerformanceLogMiddleware>();
+builder.Services.AddSingleton(perfLogger);
 //Configure Services
 builder.Services.AddSingleton<IConfigurationModel, ConfigurationModel>(sp => config);
 
+
 var app = builder.Build();
+
+app.UseMiddleware<PerformanceLogMiddleware>();
 
 //Configure the HTTP request pipeline.
 if (config.EnableSwagger)
