@@ -1,0 +1,6 @@
+@Template.WebApiMSSQL_HostAddress = http://localhost:5119
+
+GET {{Template.WebApiMSSQL_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
