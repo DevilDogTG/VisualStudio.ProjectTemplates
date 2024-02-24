@@ -5,7 +5,7 @@ VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.Console", "Template.Console\Template.Console.csproj", "{B780B6C1-833D-4A54-A55F-4F509E51BB6B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.ConsoleMSSQL", "Template.ConsoleDB\Template.ConsoleMSSQL.csproj", "{409DA70D-D304-4D97-B262-0286D56831D5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.ConsoleMSSQL", "Template.ConsoleMSSQL\Template.ConsoleMSSQL.csproj", "{409DA70D-D304-4D97-B262-0286D56831D5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.WebApi", "Template.WebApi\Template.WebApi.csproj", "{08CFCE66-7EE8-4D6B-80DB-9D9932193702}"
 EndProject
