@@ -1,19 +1,21 @@
 ﻿using Microsoft.Extensions.Logging;
+using Template.ConsoleMSSQL.Models;
 
 namespace Template.ConsoleMSSQL.Services
 {
     public class ApplicationService
     {
-        private readonly ILogger<ApplicationService> _logger;
-        public ApplicationService(ILogger<ApplicationService> logger)
+        private readonly IConfigurationModel config;
+        private readonly ILogger<ApplicationService> logger;
+        public ApplicationService(ILogger<ApplicationService> _logger, IConfigurationModel _config)
         {
-            _logger = logger;
+            logger = _logger;
+            config = _config;
         }
 
         public void Run()
         {
-            _logger.LogDebug("Debuging log start.");
-            _logger.LogInformation("Application is running");
+            logger.LogInformation("Application is running");
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Template.WebApiMSSQL.Interfaces;
+using Template.WebApiMSSQL.Models;
 
 namespace Template.WebApiMSSQL.Controllers
 {

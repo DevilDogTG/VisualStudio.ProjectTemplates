@@ -1,4 +1,4 @@
-﻿namespace Template.WebApiMSSQL.Interfaces
+﻿namespace Template.ServiceMSSQL.Models
 {
     public interface IConfigurationModel
     {

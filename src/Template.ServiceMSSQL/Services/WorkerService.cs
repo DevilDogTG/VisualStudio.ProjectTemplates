@@ -1,12 +1,16 @@
-﻿namespace Template.ServiceMSSQL.Services
+﻿using Template.ServiceMSSQL.Models;
+
+namespace Template.ServiceMSSQL.Services
 {
     public class WorkerService : BackgroundService
     {
         private readonly ILogger<WorkerService> logger;
+        private readonly IConfigurationModel config;
 
-        public WorkerService(ILogger<WorkerService> _logger)
+        public WorkerService(ILogger<WorkerService> _logger, IConfigurationModel _config)
         {
             logger = _logger;
+            config = _config;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)

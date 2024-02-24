@@ -10,9 +10,7 @@ using Template.ConsoleMSSQL.Services;
 var builder = Host.CreateApplicationBuilder(args);
 builder.Configuration.SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
 builder.Configuration.AddJsonFile(Const.ConfigurationFile, optional: false, reloadOnChange: true);
-var config = builder.Configuration.GetSection(Const.ConfigurationKey).Get<ConfigurationModel>();
-if (config is null)
-{ throw new ArgumentNullException("Configuration not found."); }
+var config = builder.Configuration.GetSection(Const.ConfigurationKey).Get<ConfigurationModel>() ?? throw new ArgumentNullException("Configuration not found.");
 
 builder.Services.AddSerilog(config =>
 {
