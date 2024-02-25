@@ -16,6 +16,16 @@ Various project types including:
 - Web API
 - Worker Service (Windows Service)
 
+## Dependencies
+
+Thanks to the community, the template uses some dependencies to make the development process easier.
+
+- [Serilog](https://serilog.net/)
+- [Serilog.Enrichers.AspNetCore.RequestHeader](https://github.com/DevilDogTG/serilog-enrichers-aspnetcore)
+- [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/)
+- [EFCore.BulkExtension](https://github.com/borisdj/EFCore.BulkExtensions)
+- [Newtonsoft.Json](https://www.newtonsoft.com/json)
+
 ## Concepts
 
 Following we need to explain some concepts used in the template.
