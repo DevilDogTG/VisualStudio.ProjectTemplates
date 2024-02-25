@@ -3,19 +3,20 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.Console", "Template.Console\Template.Console.csproj", "{B780B6C1-833D-4A54-A55F-4F509E51BB6B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.Console", "src\Template.Console\Template.Console.csproj", "{B780B6C1-833D-4A54-A55F-4F509E51BB6B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.ConsoleMSSQL", "Template.ConsoleMSSQL\Template.ConsoleMSSQL.csproj", "{409DA70D-D304-4D97-B262-0286D56831D5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.ConsoleMSSQL", "src\Template.ConsoleMSSQL\Template.ConsoleMSSQL.csproj", "{409DA70D-D304-4D97-B262-0286D56831D5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.WebApi", "Template.WebApi\Template.WebApi.csproj", "{08CFCE66-7EE8-4D6B-80DB-9D9932193702}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.WebApi", "src\Template.WebApi\Template.WebApi.csproj", "{08CFCE66-7EE8-4D6B-80DB-9D9932193702}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.WebApiMSSQL", "Template.WebApiMSSQL\Template.WebApiMSSQL.csproj", "{CB90CD5A-28FE-4871-B884-4EE1127C7424}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.WebApiMSSQL", "src\Template.WebApiMSSQL\Template.WebApiMSSQL.csproj", "{CB90CD5A-28FE-4871-B884-4EE1127C7424}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.ServiceMSSQL", "Template.ServiceMSSQL\Template.ServiceMSSQL.csproj", "{1EA7468B-B627-4980-8553-78E0B8D24C50}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Template.ServiceMSSQL", "src\Template.ServiceMSSQL\Template.ServiceMSSQL.csproj", "{1EA7468B-B627-4980-8553-78E0B8D24C50}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{71D04777-83AD-4E84-B6A9-77AF38E78F26}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		..\LICENSE.md = ..\LICENSE.md
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
