@@ -2,7 +2,7 @@
 
 This project is a Visual Studio template for creating a new project. It is based on personal used and is not intended to be a one-size-fits-all solution. It is intended to be a starting point for a new project.
 
-Any comment and suggestion are welcome. Please use the [Issues]() section to report any problem or to suggest any improvement.
+Any comment and suggestion are welcome. Please use the [Discussions](https://github.com/DevilDogTG/visualstudio-projects-template/discussions) section to report any problem or to suggest any improvement.
 
 > **Note** This is individual maintained project. Maybe I will not be able to respond to all issues. But I will try to do my best.
 
