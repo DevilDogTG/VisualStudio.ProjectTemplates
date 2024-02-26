@@ -29,9 +29,7 @@ builder.Services.AddSingleton<IConfigurationModel, ConfigurationModel>(sp => con
 
 
 var app = builder.Build();
-
 app.UseMiddleware<PerformanceLogMiddleware>();
-
 //Configure the HTTP request pipeline.
 if (config.EnableSwagger)
 {
