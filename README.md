@@ -58,13 +58,15 @@ For more information, see [Dependency injection in .NET](https://docs.microsoft.
 To install the template, just copy files in folder `export` to the following directory:
 
 ```cmd
-%USERPROFILE%\Documents\Visual Studio [Version]\Templates\ProjectTemplates
+%USERPROFILE%\Documents\Visual Studio 2022\Templates\ProjectTemplates
 ```
 
-You can run the following command in PowerShell to copy the files:
+**Note** that you need to replace `Visual Studio 2022` with the version of Visual Studio you are using.
+
+Or run the following command in `PowerShell` to copy the files:
 
 ```powershell
-Copy-Item -Path .\export\* -Destination "$env:USERPROFILE\Documents\Visual Studio 2022\Templates\ProjectTemplates" -Recurse
+Copy-Item -Path .\export\* -Destination "$env:USERPROFILE\Documents\Visual Studio 2022\Templates\ProjectTemplates" -Recurse -Force
 ```
 
 **Note** that you need to replace `Visual Studio 2022` with the version of Visual Studio you are using.
