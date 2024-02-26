@@ -21,7 +21,8 @@ Various project types including:
 Thanks to the community, the template uses some dependencies to make the development process easier.
 
 - [Serilog](https://serilog.net/)
-- [Serilog.Enrichers.AspNetCore.RequestHeader](https://github.com/DevilDogTG/serilog-enrichers-aspnetcore)
+	- [Serilog.Enrichers.AspNetCore.RequestHeader](https://github.com/DevilDogTG/serilog-enrichers-aspnetcore)
+	- [Serilog.Enrichers.Environment](https://github.com/serilog/serilog-enrichers-environment)
 - [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/)
 - [EFCore.BulkExtension](https://github.com/borisdj/EFCore.BulkExtensions)
 - [Newtonsoft.Json](https://www.newtonsoft.com/json)
@@ -57,13 +58,15 @@ For more information, see [Dependency injection in .NET](https://docs.microsoft.
 To install the template, just copy files in folder `export` to the following directory:
 
 ```cmd
-%USERPROFILE%\Documents\Visual Studio [Version]\Templates\ProjectTemplates
+%USERPROFILE%\Documents\Visual Studio 2022\Templates\ProjectTemplates
 ```
 
-You can run the following command in PowerShell to copy the files:
+**Note** that you need to replace `Visual Studio 2022` with the version of Visual Studio you are using.
+
+Or run the following command in `PowerShell` to copy the files:
 
 ```powershell
-Copy-Item -Path .\export\* -Destination "$env:USERPROFILE\Documents\Visual Studio 2022\Templates\ProjectTemplates" -Recurse
+Copy-Item -Path .\export\* -Destination "$env:USERPROFILE\Documents\Visual Studio 2022\Templates\ProjectTemplates" -Recurse -Force
 ```
 
 **Note** that you need to replace `Visual Studio 2022` with the version of Visual Studio you are using.

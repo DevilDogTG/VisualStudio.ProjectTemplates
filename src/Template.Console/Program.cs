@@ -7,12 +7,11 @@ using Template.Console.Constraints;
 using Template.Console.Models;
 using Template.Console.Services;
 
+var basePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? throw new ArgumentException("Cannot set basePath.");
 var builder = Host.CreateApplicationBuilder(args);
-builder.Configuration.SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+builder.Configuration.SetBasePath(basePath);
 builder.Configuration.AddJsonFile(Const.ConfigurationFile, optional: false, reloadOnChange: true);
-var config = builder.Configuration.GetSection(Const.ConfigurationKey).Get<ConfigurationModel>();
-if (config is null)
-{ throw new ArgumentNullException("Configuration not found."); }
+var config = builder.Configuration.GetSection(Const.ConfigurationKey).Get<ConfigurationModel>() ?? throw new ArgumentException("Cannot load config");
 
 builder.Services.AddSerilog(config =>
 {
