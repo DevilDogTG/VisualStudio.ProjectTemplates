@@ -1,16 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Template.WebApi.Models;
+using Microsoft.Extensions.Options;
+using Template.WebApi.Models.Settings;
 
 namespace Template.WebApi.Controllers
 {
     public class DefaultControllerBase : ControllerBase
     {
-        protected readonly IConfigurationModel config;
+        protected readonly AppSettings config;
         protected readonly ILogger logger;
 
-        public DefaultControllerBase(ILogger _logger, IConfigurationModel _config)
+        public DefaultControllerBase(ILogger _logger, IOptions<AppSettings> _config)
         {
-            config = _config;
+            config = _config.Value;
             logger = _logger;
         }
     }
