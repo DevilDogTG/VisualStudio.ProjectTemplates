@@ -1,0 +1,9 @@
+{
+  "configProperties": {
+    "System.GC.Server": true, // Enables server garbage collection
+    "System.GC.Concurrent": true, // Enables concurrent garbage collection,
+    "System.GC.HeapHardLimitPercent": 70,
+    "System.Threading.ThreadPool.MinThreads": 1,
+    "System.Threading.ThreadPool.MaxThreads": 1
+  }
+}

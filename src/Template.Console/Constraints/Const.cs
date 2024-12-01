@@ -3,6 +3,6 @@
     public static class Const
     {
         public const string ConfigurationFile = "appsettings.json";
-        public const string ConfigurationKey = "Configuration";
+        public const string LoggingConfigurationFile = "serilogsettings.json";
     }
 }

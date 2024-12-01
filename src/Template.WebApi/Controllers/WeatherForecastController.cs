@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Template.WebApi.Models;
+using Template.WebApi.Models.Settings;
 
 namespace Template.WebApi.Controllers
 {
@@ -12,7 +14,7 @@ namespace Template.WebApi.Controllers
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
 
-        public WeatherForecastController(ILogger<WeatherForecastController> _logger, IConfigurationModel _config) : base(_logger, _config)
+        public WeatherForecastController(ILogger<WeatherForecastController> _logger, IOptions<AppSettings> _config) : base(_logger, _config)
         {
         }
 
