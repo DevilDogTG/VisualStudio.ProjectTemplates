@@ -1,0 +1,25 @@
+{
+  "LoggingSettings": {
+    "FileSize": 104857600,
+    "FlushInterval": 1,
+    "ConsoleLog": {
+      "Enable": true,
+      "MinimumLevel": "Information",
+      "Template": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+    },
+    "AppLog": {
+      "Enable": true,
+      "Path": "logs/appsLogs..log",
+      "Template": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}][{Level:u3}][{MachineName}][{CorrelationId}] {Message:l}{NewLine}"
+    }
+  },
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Debug",
+      "Override": {
+        "Microsoft": "Error",
+        "System": "Error"
+      }
+    }
+  }
+}

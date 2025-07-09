@@ -12,7 +12,6 @@ builder.Host.UseSerilog((context, loggerConfiguration) => loggerConfiguration
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 //Configure Performance Logging
 var perfLog = new LoggerConfiguration()
@@ -30,12 +29,6 @@ builder.Services.AddSingleton<IConfigurationModel, ConfigurationModel>(sp => con
 
 var app = builder.Build();
 app.UseMiddleware<PerformanceLogMiddleware>();
-//Configure the HTTP request pipeline.
-if (config.EnableSwagger)
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 //app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
