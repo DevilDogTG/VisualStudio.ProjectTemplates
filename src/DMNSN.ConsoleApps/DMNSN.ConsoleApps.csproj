@@ -11,7 +11,7 @@
     <Description>Visual Studio TemplaProject Templateproject templates</Description>
     <Copyright>Copyright 2025 @ DevDogs</Copyright>
     <PackageProjectUrl>https://www.oneweb.co.th</PackageProjectUrl>
-    <ApplicationIcon>DevDogs.ico</ApplicationIcon>
+    <ApplicationIcon>logo.ico</ApplicationIcon>
     <Authors>DevilDogTG</Authors>
     <Company>DevDogs</Company>
     <Description>Console application project template</Description>
@@ -20,13 +20,18 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/DevilDogTG/VisualStudio.ProjectTemplates</RepositoryUrl>
     <PackageTags>dotnet,vsstudio,templates</PackageTags>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="DevDogs.ico" />
+    <Content Include="logo.ico" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="..\..\logo.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
