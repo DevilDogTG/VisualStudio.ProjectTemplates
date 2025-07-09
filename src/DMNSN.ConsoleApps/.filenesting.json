@@ -1,0 +1,15 @@
+{
+  "help": "https://go.microsoft.com/fwlink/?linkid=866610",
+  "settings": {
+    "file_nesting_rules": {
+      "add": {
+        "appsettings": {
+          "files": [
+            "appsettings.*.json"
+          ],
+          "parent": "appsettings.json"
+        }
+      }
+    }
+  }
+}
