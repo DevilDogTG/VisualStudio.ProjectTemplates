@@ -64,5 +64,3 @@ catch (Exception ex)
     Console.WriteLine($"Exception: {ex.Message}");
     Environment.Exit(-1);
 }
-
-

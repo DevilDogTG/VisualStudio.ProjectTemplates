@@ -48,5 +48,3 @@ public class StartApplication(
         throw new InvalidOperationException("No specified action.");
     }
 }
-
-

@@ -4,6 +4,3 @@ public interface IExampleService
 {
     public int Run(ExampleArgs args);
 }
-
-
-

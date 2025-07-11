@@ -9,6 +9,3 @@ public class AppSettings
     public string ApplicationName { get; set; } = "DMNSN Application";
     public bool EnableDemo { get; set; } = false;
 }
-
-
-
