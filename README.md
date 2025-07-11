@@ -72,3 +72,7 @@ Copy-Item -Path .\export\* -Destination "$env:USERPROFILE\Documents\Visual Studi
 **Note** that you need to replace `Visual Studio 2022` with the version of Visual Studio you are using.
 
 Then, you can create a new project using the template in Visual Studio.
+
+
+For details on the coding style used in the sample console app, see [src/DMNSN.ConsoleApps/README.md](src/DMNSN.ConsoleApps/README.md).
+
