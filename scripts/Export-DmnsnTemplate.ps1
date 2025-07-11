@@ -116,7 +116,7 @@ foreach ($project in $projectFolders) {
         $rel = $_.FullName.Substring($projectPath.Length + 1) -replace '\\', '/'
         Log "Replacing namespace in: ./$rel"
         if (-not $DryRun) {
-            (Get-Content $_.FullName -Raw) -replace [regex]::Escape($global:oldNamespace), '$safeprojectname$' |
+            (Get-Content $_.FullName -Raw) -replace [regex]::Escape($global:oldNamespace), 'DMNSN.ConsoleApps' |
                 Set-Content -Encoding UTF8 $_.FullName
         }
     }

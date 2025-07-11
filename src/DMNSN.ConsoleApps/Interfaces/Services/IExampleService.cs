@@ -1,4 +1,4 @@
-namespace $safeprojectname$.Interfaces.Services;
+namespace DMNSN.ConsoleApps.Interfaces.Services;
 
 public interface IExampleService
 {

@@ -1,10 +1,10 @@
-using $safeprojectname$.Interfaces.Services;
-using $safeprojectname$.Settings;
+using DMNSN.ConsoleApps.Interfaces.Services;
+using DMNSN.ConsoleApps.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
-namespace $safeprojectname$.Services;
+namespace DMNSN.ConsoleApps.Services;
 
 public class AppService(
     ILogger<AppService> logger,

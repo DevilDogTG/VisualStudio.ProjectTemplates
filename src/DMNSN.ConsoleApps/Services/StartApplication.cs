@@ -3,7 +3,7 @@ using CommandLine.Text;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 
-namespace $safeprojectname$.Services;
+namespace DMNSN.ConsoleApps.Services;
 
 public class StartApplication(
     ILogger<StartApplication> _logger,

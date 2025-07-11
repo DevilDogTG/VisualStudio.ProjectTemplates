@@ -1,4 +1,4 @@
-namespace $safeprojectname$.Settings;
+namespace DMNSN.ConsoleApps.Settings;
 
 /// <summary>
 /// Represents the application settings configuration.
