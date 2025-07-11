@@ -66,6 +66,7 @@ function Generate-ProjectXml {
 
 # ------------------------ TEMPLATE PROCESS ------------------------
 $projectFolders = Get-ChildItem $srcPath -Directory
+$tempWorkRoot = Join-Path $env:TEMP ('VSExport_' + [guid]::NewGuid())
 
 foreach ($project in $projectFolders) {
     $projectPath = $project.FullName
@@ -73,6 +74,12 @@ foreach ($project in $projectFolders) {
     if (-not (Test-Path $configPath)) {
         Log "⚠ Skipping '$($project.Name)' (no config file)"
         continue
+    } else {
+        # --- BEGIN TEMP WORKDIR PATCH ---
+        New-Item -ItemType Directory -Path $tempWorkRoot -Force | Out-Null
+        $tempProjectPath = Join-Path $tempWorkRoot $project.Name
+        Copy-Item -Path $projectPath -Destination $tempProjectPath -Recurse -Force
+        $projectPath = $tempProjectPath
     }
 
     $config = Get-Content $configPath | ConvertFrom-Json
@@ -225,4 +232,8 @@ foreach ($project in $projectFolders) {
     Log "✅ Done: $zipPath`n"
 }
 
+# --- CLEANUP TEMP WORKDIR ---
+if (Test-Path $tempWorkRoot) {
+    Remove-Item -Path $tempWorkRoot -Recurse -Force -ErrorAction SilentlyContinue
+}
 Log "🎯 All templates saved in: $outputPath"
