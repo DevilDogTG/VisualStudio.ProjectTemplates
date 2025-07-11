@@ -22,7 +22,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Assets", "Assets", "{449C53
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{7ADA4614-E6A3-4CCB-A689-AC4F30608833}"
 	ProjectSection(SolutionItems) = preProject
-		scripts\export-template.ps1 = scripts\export-template.ps1
+		scripts\Export-DmnsnTemplate.ps1 = scripts\Export-DmnsnTemplate.ps1
+		scripts\Import-DmnsnTemplate.ps1 = scripts\Import-DmnsnTemplate.ps1
 	EndProjectSection
 EndProject
 Global

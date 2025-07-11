@@ -363,3 +363,4 @@ FodyWeavers.xsd
 
 scripts/logs/*
 !scripts/logs/placeholder.log
+**/ouput/**

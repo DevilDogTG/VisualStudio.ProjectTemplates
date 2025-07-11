@@ -1,7 +1,7 @@
 param (
     [string]$RootPath = (Resolve-Path "..\").Path,
     [switch]$DryRun,
-    [string]$LogPath = "logs\logging-" + (Get-Date -Format "yyyyMMdd-HHmmss") + ".log"
+    [string]$LogPath = "logs\exporting-" + (Get-Date -Format "yyyyMMdd-HHmmss") + ".log"
 )
 
 # Enable error handling
