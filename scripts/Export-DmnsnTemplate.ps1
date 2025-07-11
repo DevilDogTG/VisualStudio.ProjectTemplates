@@ -1,11 +1,7 @@
 param (
-    [string]$RootPath = (Resolve-Path "..\").Path,
     [switch]$DryRun,
-    [string]$LogPath = "logs\exporting-" + (Get-Date -Format "yyyyMMdd-HHmmss") + ".log"
+    [string]$LogPath
 )
-
-# Enable error handling
-$ErrorActionPreference = "Stop"
 
 # ------------------------ LOGGING ------------------------
 function Log {
@@ -17,11 +13,20 @@ function Log {
     }
 }
 
-# Global trap for unexpected exceptions
-trap {
-    $err = $_.Exception.Message
-    Write-Host "❌ ERROR: $err" -ForegroundColor Red
-    Log $err
+# Enable error handling
+$ErrorActionPreference = "Stop"
+
+# Set root path is 1 level up from the script path
+$RootPath = (Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent)
+
+# Initialize LogPath if not provided
+if (-not $LogPath) {
+    $LogPath = Join-Path $RootPath ("logs\exporting-" + (Get-Date -Format "yyyyMMdd-HHmmss") + ".log")
+}
+
+# Root path validation
+if (-not (Test-Path $RootPath)) {
+    Write-Host "❌ ERROR: Script path does not exist: $RootPath" -ForegroundColor Red
     exit 1
 }
 
@@ -30,8 +35,26 @@ $outputPath = Join-Path $RootPath "output"
 $logoPath = Join-Path $RootPath "logo.png"
 $previewPath = Join-Path $RootPath "preview.png"
 
+# Ensure the log directory exists
+$logDir = Split-Path -Path $LogPath -Parent
+if (-not (Test-Path $logDir)) {
+    New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+}
+if (-not (Test-Path $LogPath)) {
+    New-Item -ItemType File -Path $LogPath -Force | Out-Null
+}
+
+# Global trap for unexpected exceptions
+trap {
+    $err = $_.Exception.Message
+    Write-Host "❌ ERROR: $err" -ForegroundColor Red
+    Log "❌ ERROR: $err"
+    exit 1
+}
+
+# Create output directory if it doesn't exist
 if (-not (Test-Path $outputPath)) {
-    New-Item -ItemType Directory -Path $outputPath | Out-Null
+    New-Item -ItemType Directory -Path $outputPath -Force | Out-Null
 }
 
 # ------------------------ XML BUILDER ------------------------
@@ -44,7 +67,14 @@ function Generate-ProjectXml {
 
     $content = ""
     $currentPath = Join-Path $basePath $folder
-    $entries = Get-ChildItem -Path $currentPath | Where-Object {
+    
+    # Check if path exists
+    if (-not (Test-Path $currentPath)) {
+        Log "⚠ Warning: Path does not exist: $currentPath"
+        return $content
+    }
+    
+    $entries = Get-ChildItem -Path $currentPath -ErrorAction SilentlyContinue | Where-Object {
         $_.PSIsContainer -or $allowedFiles.FullName -contains $_.FullName
     }
 
@@ -65,28 +95,47 @@ function Generate-ProjectXml {
 }
 
 # ------------------------ TEMPLATE PROCESS ------------------------
-$projectFolders = Get-ChildItem $srcPath -Directory
+$projectFolders = Get-ChildItem $srcPath -Directory -ErrorAction SilentlyContinue
+if (-not $projectFolders) {
+    Log "❌ ERROR: No project folders found in: $srcPath"
+    exit 1
+}
+
 $tempWorkRoot = Join-Path $env:TEMP ('VSExport_' + [guid]::NewGuid())
 
 foreach ($project in $projectFolders) {
     $projectPath = $project.FullName
     $configPath = Join-Path $projectPath "template.config.json"
+    
     if (-not (Test-Path $configPath)) {
         Log "⚠ Skipping '$($project.Name)' (no config file)"
         continue
-    } else {
-        # --- BEGIN TEMP WORKDIR PATCH ---
+    }
+
+    # --- BEGIN TEMP WORKDIR PATCH ---
+    try {
         New-Item -ItemType Directory -Path $tempWorkRoot -Force | Out-Null
         $tempProjectPath = Join-Path $tempWorkRoot $project.Name
         Copy-Item -Path $projectPath -Destination $tempProjectPath -Recurse -Force
         $projectPath = $tempProjectPath
     }
+    catch {
+        Log "❌ ERROR: Failed to create temp directory: $_"
+        continue
+    }
 
-    $config = Get-Content $configPath | ConvertFrom-Json
-    $templateName = $config.name
-    $description = $config.description
-    $global:oldNamespace = $config.defaultNamespace
-    $csproj = Get-ChildItem $projectPath -Filter *.csproj | Select-Object -First 1
+    try {
+        $config = Get-Content $configPath | ConvertFrom-Json
+        $templateName = $config.name
+        $description = $config.description
+        $global:oldNamespace = $config.defaultNamespace
+    }
+    catch {
+        Log "❌ ERROR: Failed to parse config file: $_"
+        continue
+    }
+
+    $csproj = Get-ChildItem $projectPath -Filter *.csproj -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $csproj) {
         Log "⚠ Skipping '$($project.Name)' (no .csproj found)"
         continue
@@ -100,42 +149,45 @@ foreach ($project in $projectFolders) {
     if ($DryRun) { Log "🔍 [DryRun] No changes will be made." }
 
     # Filter included files
-    $excludedDirs = @("bin", "obj")
-    $excludedFiles = @(
-        ".zip", ".vstemplate", ".user", ".suo"
-    )
+    $excludedDirs = @("bin", "obj", "logs", ".vs", ".git")
+    $excludedFiles = @(".zip", ".vstemplate", ".user", ".suo", ".gitignore", ".gitattributes")
+    $excludedNames = @("template.config.json")
 
-    $entries = Get-ChildItem -Path $currentPath | Where-Object {
-        $_.PSIsContainer -or $allowedFiles.FullName -contains $_.FullName
-    }
-
-    $filesToInclude = Get-ChildItem -Path $projectPath -Recurse -File | Where-Object {
-        $isInExcludedDir = ($_.FullName -split '[\\/]' | Where-Object { $excludedDirs -contains $_ }).Count -gt 0
+    $filesToInclude = Get-ChildItem -Path $projectPath -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
+        $relativePath = $_.FullName.Substring($projectPath.Length + 1)
+        $pathParts = $relativePath -split '[\\/]'
+        $isInExcludedDir = ($pathParts | Where-Object { $excludedDirs -contains $_ }).Count -gt 0
         $isExcludedExt = $excludedFiles -contains $_.Extension.ToLower()
-        $isExcludedName = ($_.Name -ieq "template.config.json")
+        $isExcludedName = $excludedNames -contains $_.Name
         -not ($isInExcludedDir -or $isExcludedExt -or $isExcludedName)
     }
 
     # 🔁 Replace namespace only in allowed files
     $filesToInclude | Where-Object {
-        $_.Extension -in ".cs", ".csproj", ".json"
+        $_.Extension -in @(".cs", ".csproj", ".json")
     } | ForEach-Object {
         $rel = $_.FullName.Substring($projectPath.Length + 1) -replace '\\', '/'
         Log "Replacing namespace in: ./$rel"
         if (-not $DryRun) {
-            (Get-Content $_.FullName -Raw) -replace [regex]::Escape($global:oldNamespace), 'DMNSN.ConsoleApps' |
-                Set-Content -Encoding UTF8 $_.FullName
+            try {
+                $content = Get-Content $_.FullName -Raw -ErrorAction Stop
+                $newContent = $content -replace [regex]::Escape($global:oldNamespace), '$safeprojectname$'
+                Set-Content -Path $_.FullName -Value $newContent -Encoding UTF8 -NoNewline
+            }
+            catch {
+                Log "⚠ Warning: Failed to replace namespace in $($_.FullName): $_"
+            }
         }
     }
 
-
-    $excluded = Get-ChildItem -Path $projectPath -Recurse -File | Where-Object {
-    -not ($filesToInclude.FullName -contains $_.FullName)
+    # Log excluded files
+    $actualExcludedFiles = Get-ChildItem -Path $projectPath -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
+        -not ($filesToInclude.FullName -contains $_.FullName)
     }
-    $excluded | ForEach-Object {
-        Log "🚫 Excluded: $($_.FullName)"
+    $actualExcludedFiles | ForEach-Object {
+        $rel = $_.FullName.Substring($projectPath.Length + 1) -replace '\\', '/'
+        Log "🚫 Excluded: ./$rel"
     }
-
 
     # Build vstemplate
     $vstemplate = @"
@@ -168,57 +220,79 @@ foreach ($project in $projectFolders) {
 
     Log "📄 Generating vstemplate"
     if (-not $DryRun) {
-        Set-Content -Path $vstemplatePath -Value $vstemplate -Encoding UTF8
+        try {
+            Set-Content -Path $vstemplatePath -Value $vstemplate -Encoding UTF8
+        }
+        catch {
+            Log "❌ ERROR: Failed to create vstemplate: $_"
+            continue
+        }
     }
 
     # Copy icon/preview
     if (Test-Path $logoPath) {
         Log "🖼️ Adding logo.png"
         if (-not $DryRun) {
-            Copy-Item $logoPath -Destination (Join-Path $projectPath "__TemplateIcon.png") -Force
+            try {
+                Copy-Item $logoPath -Destination (Join-Path $projectPath "__TemplateIcon.png") -Force
+            }
+            catch {
+                Log "⚠ Warning: Failed to copy logo: $_"
+            }
         }
     }
     if (Test-Path $previewPath) {
         Log "🖼️ Adding preview.png"
         if (-not $DryRun) {
-            Copy-Item $previewPath -Destination (Join-Path $projectPath "__TemplatePreview.png") -Force
+            try {
+                Copy-Item $previewPath -Destination (Join-Path $projectPath "__TemplatePreview.png") -Force
+            }
+            catch {
+                Log "⚠ Warning: Failed to copy preview: $_"
+            }
         }
     }
 
     # Create zip
     Log "📦 Packing to ZIP"
     if (-not $DryRun) {
-        if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-        # Build relative paths for inclusion
-        $tempZipDir = Join-Path $projectPath "_template_build"
-        if (Test-Path $tempZipDir) {
-            Remove-Item $tempZipDir -Recurse -Force
-        }
-        New-Item -ItemType Directory -Path $tempZipDir | Out-Null
-
-        foreach ($file in $filesToInclude) {
-            $relative = $file.FullName.Substring($projectPath.Length + 1)
-            $dest = Join-Path $tempZipDir $relative
-            $destDir = Split-Path $dest
-            if (-not (Test-Path $destDir)) {
-                New-Item -ItemType Directory -Path $destDir -Force | Out-Null
-            }
-            Copy-Item -Path $file.FullName -Destination $dest -Force
-        }
-
-        # Also copy vstemplate and icons into staging
-        if (-not $DryRun) {
-            Copy-Item -Path $vstemplatePath -Destination (Join-Path $tempZipDir "MyTemplate.vstemplate") -Force
-            Copy-Item -Path (Join-Path $projectPath "__TemplateIcon.png") -Destination (Join-Path $tempZipDir "__TemplateIcon.png") -Force -ErrorAction SilentlyContinue
-            Copy-Item -Path (Join-Path $projectPath "__TemplatePreview.png") -Destination (Join-Path $tempZipDir "__TemplatePreview.png") -Force -ErrorAction SilentlyContinue
-        }
-
-        # Zip from temp build folder
-        Log "📦 Packing selected files to ZIP"
-        if (-not $DryRun) {
+        try {
             if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+            
+            # Build relative paths for inclusion
+            $tempZipDir = Join-Path $projectPath "_template_build"
+            if (Test-Path $tempZipDir) {
+                Remove-Item $tempZipDir -Recurse -Force
+            }
+            New-Item -ItemType Directory -Path $tempZipDir | Out-Null
+
+            foreach ($file in $filesToInclude) {
+                $relative = $file.FullName.Substring($projectPath.Length + 1)
+                $dest = Join-Path $tempZipDir $relative
+                $destDir = Split-Path $dest -Parent
+                if (-not (Test-Path $destDir)) {
+                    New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+                }
+                Copy-Item -Path $file.FullName -Destination $dest -Force
+            }
+
+            # Also copy vstemplate and icons into staging
+            Copy-Item -Path $vstemplatePath -Destination (Join-Path $tempZipDir "MyTemplate.vstemplate") -Force
+            if (Test-Path (Join-Path $projectPath "__TemplateIcon.png")) {
+                Copy-Item -Path (Join-Path $projectPath "__TemplateIcon.png") -Destination (Join-Path $tempZipDir "__TemplateIcon.png") -Force
+            }
+            if (Test-Path (Join-Path $projectPath "__TemplatePreview.png")) {
+                Copy-Item -Path (Join-Path $projectPath "__TemplatePreview.png") -Destination (Join-Path $tempZipDir "__TemplatePreview.png") -Force
+            }
+
+            # Zip from temp build folder
+            Log "📦 Packing selected files to ZIP"
             Compress-Archive -Path "$tempZipDir\*" -DestinationPath $zipPath -Force
             Remove-Item $tempZipDir -Recurse -Force
+        }
+        catch {
+            Log "❌ ERROR: Failed to create ZIP: $_"
+            continue
         }
     }
 

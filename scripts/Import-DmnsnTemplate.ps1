@@ -1,8 +1,13 @@
 param (
-    [string]$SourcePath = (Resolve-Path "..\output").Path,
     [string]$TargetFolderName = "DMNSN",  # Your desired subfolder under ProjectTemplates
     [switch]$DryRun
 )
+# Enable error handling
+$ErrorActionPreference = "Stop"
+
+# Set root path is 1 level up from the script path
+$RootPath = (Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent)
+$SourcePath = Join-Path $RootPath "output"
 
 function Get-VSProjectTemplatePath {
     $defaultPath = Join-Path $env:USERPROFILE "Documents\Visual Studio 2022\Templates\ProjectTemplates"

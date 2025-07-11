@@ -361,6 +361,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-scripts/logs/*
-!scripts/logs/placeholder.log
-**/ouput/**
+**/logs/*
+!**/logs/placeholder.log
+**/output/*
