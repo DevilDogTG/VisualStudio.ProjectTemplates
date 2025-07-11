@@ -1,4 +1,4 @@
-﻿using DMNSN.ConsoleApps.Services;
+using $safeprojectname$.Services;
 using DMNSN.Core.Constraints;
 using DMNSN.Core.Settings;
 using Microsoft.Extensions.Configuration;
@@ -64,3 +64,5 @@ catch (Exception ex)
     Console.WriteLine($"Exception: {ex.Message}");
     Environment.Exit(-1);
 }
+
+

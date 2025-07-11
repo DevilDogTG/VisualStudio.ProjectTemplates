@@ -1,5 +1,6 @@
 {
   "name": "DMNSN Console",
   "description": "A simple console app template",
-  "defaultNamespace": "DMNSN.ConsoleApps"
+  "defaultNamespace": "$safeprojectname$"
 }
+

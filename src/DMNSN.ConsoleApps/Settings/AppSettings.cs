@@ -1,4 +1,4 @@
-﻿namespace DMNSN.ConsoleApps.Settings;
+namespace $safeprojectname$.Settings;
 
 /// <summary>
 /// Represents the application settings configuration.
@@ -9,3 +9,6 @@ public class AppSettings
     public string ApplicationName { get; set; } = "DMNSN Application";
     public bool EnableDemo { get; set; } = false;
 }
+
+
+

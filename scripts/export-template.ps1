@@ -1,8 +1,29 @@
 param (
     [string]$RootPath = (Resolve-Path "..\").Path,
     [switch]$DryRun,
-    [string]$LogPath = ""
+    [string]$LogPath = "logs\logging-" + (Get-Date -Format "yyyyMMdd-HHmmss") + ".log"
 )
+
+# Enable error handling
+$ErrorActionPreference = "Stop"
+
+# ------------------------ LOGGING ------------------------
+function Log {
+    param ([string]$msg)
+    Write-Host $msg
+    if ($LogPath) {
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        Add-Content -Path $LogPath -Value ("[{0}] {1}" -f $timestamp, $msg)
+    }
+}
+
+# Global trap for unexpected exceptions
+trap {
+    $err = $_.Exception.Message
+    Write-Host "❌ ERROR: $err" -ForegroundColor Red
+    Log $err
+    exit 1
+}
 
 $srcPath = Join-Path $RootPath "src"
 $outputPath = Join-Path $RootPath "output"
@@ -11,13 +32,6 @@ $previewPath = Join-Path $RootPath "preview.png"
 
 if (-not (Test-Path $outputPath)) {
     New-Item -ItemType Directory -Path $outputPath | Out-Null
-}
-
-# ------------------------ LOGGING ------------------------
-function Log {
-    param ([string]$msg)
-    Write-Host $msg
-    if ($LogPath) { Add-Content -Path $LogPath -Value "[{0}] {1}" -f (Get-Date), $msg }
 }
 
 # ------------------------ XML BUILDER ------------------------
@@ -35,7 +49,7 @@ function Generate-ProjectXml {
     }
 
     foreach ($entry in $entries) {
-        $relPath = Join-Path $folder $entry.Name -replace '\\', '/'
+        $relPath = (Join-Path -Path "$folder" -ChildPath "$($entry.Name)") -replace '\\', '/'
 
         if ($entry.PSIsContainer) {
             $content += "      <Folder Name=""$($entry.Name)"" TargetFolderName=""$($entry.Name)"">`r`n"
@@ -43,14 +57,6 @@ function Generate-ProjectXml {
             $content += "      </Folder>`r`n"
         }
         else {
-            if ($entry.Extension -in ".cs", ".csproj", ".json") {
-                $msg = "Replacing namespace in: $relPath"
-                Log $msg
-                if (-not $DryRun) {
-                    (Get-Content $entry.FullName -Raw) -replace [regex]::Escape($global:oldNamespace), '$safeprojectname$' |
-                        Set-Content -Encoding UTF8 $entry.FullName
-                }
-            }
             $content += "        <ProjectItem ReplaceParameters=""true"" TargetFileName=""$($entry.Name)"">$relPath</ProjectItem>`r`n"
         }
     }
@@ -87,10 +93,42 @@ foreach ($project in $projectFolders) {
     if ($DryRun) { Log "🔍 [DryRun] No changes will be made." }
 
     # Filter included files
-    $filesToInclude = Get-ChildItem -Path $projectPath -Recurse -File | Where-Object {
-        $_.FullName -notmatch '\\bin\\|\\obj\\' -and
-        $_.Extension -notin ".zip", ".vstemplate", ".user", ".suo"
+    $excludedDirs = @("bin", "obj")
+    $excludedFiles = @(
+        ".zip", ".vstemplate", ".user", ".suo"
+    )
+
+    $entries = Get-ChildItem -Path $currentPath | Where-Object {
+        $_.PSIsContainer -or $allowedFiles.FullName -contains $_.FullName
     }
+
+    $filesToInclude = Get-ChildItem -Path $projectPath -Recurse -File | Where-Object {
+        $isInExcludedDir = ($_.FullName -split '[\\/]' | Where-Object { $excludedDirs -contains $_ }).Count -gt 0
+        $isExcludedExt = $excludedFiles -contains $_.Extension.ToLower()
+        $isExcludedName = ($_.Name -ieq "template.config.json")
+        -not ($isInExcludedDir -or $isExcludedExt -or $isExcludedName)
+    }
+
+    # 🔁 Replace namespace only in allowed files
+    $filesToInclude | Where-Object {
+        $_.Extension -in ".cs", ".csproj", ".json"
+    } | ForEach-Object {
+        $rel = $_.FullName.Substring($projectPath.Length + 1) -replace '\\', '/'
+        Log "Replacing namespace in: ./$rel"
+        if (-not $DryRun) {
+            (Get-Content $_.FullName -Raw) -replace [regex]::Escape($global:oldNamespace), '$safeprojectname$' |
+                Set-Content -Encoding UTF8 $_.FullName
+        }
+    }
+
+
+    $excluded = Get-ChildItem -Path $projectPath -Recurse -File | Where-Object {
+    -not ($filesToInclude.FullName -contains $_.FullName)
+    }
+    $excluded | ForEach-Object {
+        Log "🚫 Excluded: $($_.FullName)"
+    }
+
 
     # Build vstemplate
     $vstemplate = @"
@@ -108,6 +146,7 @@ foreach ($project in $projectFolders) {
     <CreateInPlace>true</CreateInPlace>
     <Icon>__TemplateIcon.png</Icon>
     <PreviewImage>__TemplatePreview.png</PreviewImage>
+    <Category>DMNSN Templates</Category>
   </TemplateData>
   <TemplateContent>
     <Project TargetFileName="$($csproj.Name)" File="$($csproj.Name)" ReplaceParameters="true">
@@ -143,7 +182,37 @@ foreach ($project in $projectFolders) {
     Log "📦 Packing to ZIP"
     if (-not $DryRun) {
         if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-        Compress-Archive -Path "$projectPath\*" -DestinationPath $zipPath -Force
+        # Build relative paths for inclusion
+        $tempZipDir = Join-Path $projectPath "_template_build"
+        if (Test-Path $tempZipDir) {
+            Remove-Item $tempZipDir -Recurse -Force
+        }
+        New-Item -ItemType Directory -Path $tempZipDir | Out-Null
+
+        foreach ($file in $filesToInclude) {
+            $relative = $file.FullName.Substring($projectPath.Length + 1)
+            $dest = Join-Path $tempZipDir $relative
+            $destDir = Split-Path $dest
+            if (-not (Test-Path $destDir)) {
+                New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+            }
+            Copy-Item -Path $file.FullName -Destination $dest -Force
+        }
+
+        # Also copy vstemplate and icons into staging
+        if (-not $DryRun) {
+            Copy-Item -Path $vstemplatePath -Destination (Join-Path $tempZipDir "MyTemplate.vstemplate") -Force
+            Copy-Item -Path (Join-Path $projectPath "__TemplateIcon.png") -Destination (Join-Path $tempZipDir "__TemplateIcon.png") -Force -ErrorAction SilentlyContinue
+            Copy-Item -Path (Join-Path $projectPath "__TemplatePreview.png") -Destination (Join-Path $tempZipDir "__TemplatePreview.png") -Force -ErrorAction SilentlyContinue
+        }
+
+        # Zip from temp build folder
+        Log "📦 Packing selected files to ZIP"
+        if (-not $DryRun) {
+            if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+            Compress-Archive -Path "$tempZipDir\*" -DestinationPath $zipPath -Force
+            Remove-Item $tempZipDir -Recurse -Force
+        }
     }
 
     # Clean up temp files

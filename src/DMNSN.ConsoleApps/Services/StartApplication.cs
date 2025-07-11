@@ -1,9 +1,9 @@
-﻿using CommandLine;
+using CommandLine;
 using CommandLine.Text;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 
-namespace DMNSN.ConsoleApps.Services;
+namespace $safeprojectname$.Services;
 
 public class StartApplication(
     ILogger<StartApplication> _logger,
@@ -48,3 +48,5 @@ public class StartApplication(
         throw new InvalidOperationException("No specified action.");
     }
 }
+
+

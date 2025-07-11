@@ -1,6 +1,6 @@
-﻿using CommandLine;
+using CommandLine;
 
-namespace DMNSN.ConsoleApps;
+namespace $safeprojectname$;
 
 [Verb("run", isDefault: true, HelpText = "Run the application with the specified options.")]
 public class AppArgs
@@ -20,3 +20,6 @@ public class ExampleArgs
         HelpText = "An example option for demonstration purposes.")]
     public string ExampleOption { get; set; } = "default-value";
 }
+
+
+
