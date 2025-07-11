@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using CommandLine.Text;
 using Microsoft.Extensions.Logging;
 using System.Reflection;

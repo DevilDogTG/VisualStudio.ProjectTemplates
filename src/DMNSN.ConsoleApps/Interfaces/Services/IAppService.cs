@@ -1,4 +1,4 @@
-﻿namespace DMNSN.ConsoleApps.Interfaces.Services;
+namespace DMNSN.ConsoleApps.Interfaces.Services;
 
 public interface IAppService
 {

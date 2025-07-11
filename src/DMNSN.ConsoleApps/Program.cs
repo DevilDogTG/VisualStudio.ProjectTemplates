@@ -1,4 +1,4 @@
-﻿using DMNSN.ConsoleApps.Services;
+using DMNSN.ConsoleApps.Services;
 using DMNSN.Core.Constraints;
 using DMNSN.Core.Settings;
 using Microsoft.Extensions.Configuration;

@@ -1,4 +1,4 @@
-﻿using DMNSN.ConsoleApps.Interfaces.Services;
+using DMNSN.ConsoleApps.Interfaces.Services;
 using DMNSN.ConsoleApps.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
