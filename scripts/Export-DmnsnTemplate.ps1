@@ -62,18 +62,19 @@ function Generate-ProjectXml {
     param (
         [string]$basePath,
         [string]$folder,
-        [array]$allowedFiles
+        [array]$allowedFiles,
+        [int]$indentLevel = 0
     )
 
+    $indent = '  ' * $indentLevel
     $content = ""
     $currentPath = Join-Path $basePath $folder
 
-    # Filter to allowed entries
+    # Filter entries (folders or allowed files only)
     $entries = Get-ChildItem -Path $currentPath -Force | Where-Object {
         if ($_.PSIsContainer) {
-            # Keep the folder if it (or any of its children) contain an allowed file
-            $fullPath = $_.FullName
-            return $allowedFiles | Where-Object { $_.FullName.StartsWith($fullPath) }
+            $subtree = $allowedFiles | Where-Object { $_.FullName.StartsWith($_.FullName) }
+            return $subtree.Count -gt 0
         } else {
             return $allowedFiles.FullName -contains $_.FullName
         }
@@ -83,21 +84,21 @@ function Generate-ProjectXml {
         $relPath = (Join-Path -Path "$folder" -ChildPath "$($entry.Name)") -replace '\\', '/'
 
         if ($entry.PSIsContainer) {
-            # Recursively process the subfolder
-            $childContent = Generate-ProjectXml -basePath $basePath -folder $relPath -allowedFiles $allowedFiles
+            $childContent = Generate-ProjectXml -basePath $basePath -folder $relPath -allowedFiles $allowedFiles -indentLevel ($indentLevel + 1)
             if ($childContent.Trim()) {
-                $content += "      <Folder Name=""$($entry.Name)"" TargetFolderName=""$($entry.Name)"">`r`n"
+                $content += "$indent  <Folder Name=""$($entry.Name)"" TargetFolderName=""$($entry.Name)"">`r`n"
                 $content += $childContent
-                $content += "      </Folder>`r`n"
+                $content += "$indent  </Folder>`r`n"
+                Log "$indent📁 $relPath"
             }
         } else {
-            $content += "        <ProjectItem ReplaceParameters=""true"" TargetFileName=""$($entry.Name)"">$relPath</ProjectItem>`r`n"
+            $content += "$indent    <ProjectItem ReplaceParameters=""true"" TargetFileName=""$($entry.Name)"">$relPath</ProjectItem>`r`n"
+            Log "$indent📄 $relPath"
         }
     }
 
     return $content
 }
-
 # ------------------------ TEMPLATE PROCESS ------------------------
 $projectFolders = Get-ChildItem $srcPath -Directory -ErrorAction SilentlyContinue
 if (-not $projectFolders) {
