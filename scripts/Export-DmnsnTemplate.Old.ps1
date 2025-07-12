@@ -67,30 +67,26 @@ function Generate-ProjectXml {
 
     $content = ""
     $currentPath = Join-Path $basePath $folder
-
-    # Filter to allowed entries
-    $entries = Get-ChildItem -Path $currentPath -Force | Where-Object {
-        if ($_.PSIsContainer) {
-            # Keep the folder if it (or any of its children) contain an allowed file
-            $fullPath = $_.FullName
-            return $allowedFiles | Where-Object { $_.FullName.StartsWith($fullPath) }
-        } else {
-            return $allowedFiles.FullName -contains $_.FullName
-        }
+    
+    # Check if path exists
+    if (-not (Test-Path $currentPath)) {
+        Log "⚠ Warning: Path does not exist: $currentPath"
+        return $content
+    }
+    
+    $entries = Get-ChildItem -Path $currentPath -ErrorAction SilentlyContinue | Where-Object {
+        $_.PSIsContainer -or $allowedFiles.FullName -contains $_.FullName
     }
 
     foreach ($entry in $entries) {
         $relPath = (Join-Path -Path "$folder" -ChildPath "$($entry.Name)") -replace '\\', '/'
 
         if ($entry.PSIsContainer) {
-            # Recursively process the subfolder
-            $childContent = Generate-ProjectXml -basePath $basePath -folder $relPath -allowedFiles $allowedFiles
-            if ($childContent.Trim()) {
-                $content += "      <Folder Name=""$($entry.Name)"" TargetFolderName=""$($entry.Name)"">`r`n"
-                $content += $childContent
-                $content += "      </Folder>`r`n"
-            }
-        } else {
+            $content += "      <Folder Name=""$($entry.Name)"" TargetFolderName=""$($entry.Name)"">`r`n"
+            $content += Generate-ProjectXml -basePath $basePath -folder $relPath -allowedFiles $allowedFiles
+            $content += "      </Folder>`r`n"
+        }
+        else {
             $content += "        <ProjectItem ReplaceParameters=""true"" TargetFileName=""$($entry.Name)"">$relPath</ProjectItem>`r`n"
         }
     }
