@@ -92,7 +92,7 @@ function Generate-ProjectXml {
                 Log "$indent📁 $relPath"
             }
         } else {
-            $content += "$indent    <ProjectItem ReplaceParameters=""true"" TargetFileName=""$($entry.Name)"">$relPath</ProjectItem>`r`n"
+            $content += "$indent    <ProjectItem ReplaceParameters=""true"" TargetFileName=""$($entry.Name)"">$($entry.Name)</ProjectItem>`r`n"
             Log "$indent📄 $relPath"
         }
     }
