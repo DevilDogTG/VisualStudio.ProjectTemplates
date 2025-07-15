@@ -134,6 +134,26 @@ foreach ($project in $projectFolders) {
         $templateName = $config.name
         $description = $config.description
         $global:oldNamespace = $config.defaultNamespace
+        
+        # Enhanced configuration properties with defaults
+        $author = if ($config.author) { $config.author } else { "Unknown" }
+        $version = if ($config.version) { $config.version } else { "1.0.0" }
+        $tags = if ($config.tags) { $config.tags -join "," } else { "" }
+        $category = if ($config.category) { $config.category } else { "General" }
+        $projectType = if ($config.projectType) { $config.projectType } else { "CSharp" }
+        $languageTag = if ($config.languageTag) { $config.languageTag } else { "C#" }
+        $platformTag = if ($config.platformTag) { $config.platformTag } else { "Windows" }
+        $projectTypeTag = if ($config.projectTypeTag) { $config.projectTypeTag } else { "project" }
+        $sortOrder = if ($config.sortOrder) { $config.sortOrder } else { 1000 }
+        $createNewFolder = if ($config.createNewFolder -ne $null) { $config.createNewFolder.ToString().ToLower() } else { "true" }
+        $provideDefaultName = if ($config.provideDefaultName -ne $null) { $config.provideDefaultName.ToString().ToLower() } else { "true" }
+        $locationField = if ($config.locationField) { $config.locationField } else { "Enabled" }
+        $enableLocationBrowseButton = if ($config.enableLocationBrowseButton -ne $null) { $config.enableLocationBrowseButton.ToString().ToLower() } else { "true" }
+        $createInPlace = if ($config.createInPlace -ne $null) { $config.createInPlace.ToString().ToLower() } else { "true" }
+        $requiredFrameworkVersion = if ($config.requiredFrameworkVersion) { $config.requiredFrameworkVersion } else { "4.0" }
+        $maxFrameworkVersion = if ($config.maxFrameworkVersion) { $config.maxFrameworkVersion } else { "" }
+        $templateGroupIdentity = if ($config.templateGroupIdentity) { $config.templateGroupIdentity } else { "" }
+        $supportedLanguages = if ($config.supportedLanguages) { $config.supportedLanguages -join "," } else { "C#" }
     }
     catch {
         Log "❌ ERROR: Failed to parse config file: $_"
@@ -151,6 +171,12 @@ foreach ($project in $projectFolders) {
     $vstemplatePath = Join-Path $projectPath "MyTemplate.vstemplate"
 
     Log "⚙ Processing '$($project.Name)'..."
+    Log "📋 Template Name: $templateName"
+    Log "👤 Author: $author"
+    Log "🔢 Version: $version"
+    Log "🏷️ Tags: $tags"
+    Log "📂 Category: $category"
+    Log "🎯 Project Type: $projectType"
     if ($DryRun) { Log "🔍 [DryRun] No changes will be made." }
 
     # Filter included files
@@ -200,16 +226,54 @@ foreach ($project in $projectFolders) {
   <TemplateData>
     <Name>$templateName</Name>
     <Description>$description</Description>
-    <ProjectType>CSharp</ProjectType>
-    <SortOrder>1000</SortOrder>
-    <CreateNewFolder>true</CreateNewFolder>
+    <ProjectType>$projectType</ProjectType>
+    <SortOrder>$sortOrder</SortOrder>
+    <CreateNewFolder>$createNewFolder</CreateNewFolder>
     <DefaultName>$global:oldNamespace</DefaultName>
-    <ProvideDefaultName>true</ProvideDefaultName>
-    <LocationField>Enabled</LocationField>
-    <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
-    <CreateInPlace>true</CreateInPlace>
+    <ProvideDefaultName>$provideDefaultName</ProvideDefaultName>
+    <LocationField>$locationField</LocationField>
+    <EnableLocationBrowseButton>$enableLocationBrowseButton</EnableLocationBrowseButton>
+    <CreateInPlace>$createInPlace</CreateInPlace>
     <Icon>__TemplateIcon.ico</Icon>
     <PreviewImage>__TemplatePreview.png</PreviewImage>
+"@
+
+    # Add optional elements if they exist
+    if ($author -ne "Unknown") {
+        $vstemplate += "    <Author>$author</Author>`r`n"
+    }
+    if ($version -ne "1.0.0") {
+        $vstemplate += "    <Version>$version</Version>`r`n"
+    }
+    if ($tags) {
+        $vstemplate += "    <ProjectSubType>$tags</ProjectSubType>`r`n"
+    }
+    if ($category -ne "General") {
+        $vstemplate += "    <ProjectCategory>$category</ProjectCategory>`r`n"
+    }
+    if ($languageTag) {
+        $vstemplate += "    <LanguageTag>$languageTag</LanguageTag>`r`n"
+    }
+    if ($platformTag) {
+        $vstemplate += "    <PlatformTag>$platformTag</PlatformTag>`r`n"
+    }
+    if ($projectTypeTag) {
+        $vstemplate += "    <ProjectTypeTag>$projectTypeTag</ProjectTypeTag>`r`n"
+    }
+    if ($requiredFrameworkVersion) {
+        $vstemplate += "    <RequiredFrameworkVersion>$requiredFrameworkVersion</RequiredFrameworkVersion>`r`n"
+    }
+    if ($maxFrameworkVersion) {
+        $vstemplate += "    <MaxFrameworkVersion>$maxFrameworkVersion</MaxFrameworkVersion>`r`n"
+    }
+    if ($templateGroupIdentity) {
+        $vstemplate += "    <TemplateGroupID>$templateGroupIdentity</TemplateGroupID>`r`n"
+    }
+    if ($supportedLanguages) {
+        $vstemplate += "    <SupportedLanguages>$supportedLanguages</SupportedLanguages>`r`n"
+    }
+
+    $vstemplate += @"
   </TemplateData>
   <TemplateContent>
     <Project TargetFileName="$($csproj.Name)" File="$($csproj.Name)" ReplaceParameters="true">

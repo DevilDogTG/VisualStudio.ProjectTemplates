@@ -1,6 +1,24 @@
 {
-  "name": "DMNSN Console",
-  "description": "A simple console app template",
-  "defaultNamespace": "DMNSN.ConsoleApps"
+  "name": "DMNSN Console Application",
+  "description": "A modern console application template with logging, dependency injection, and configuration support",
+  "defaultNamespace": "DMNSN.ConsoleApps",
+  "author": "DMNSN",
+  "version": "8.0.0",
+  "tags": ["Console", "Application", "Logging", "DependencyInjection", "Configuration"],
+  "category": "Console",
+  "projectType": "CSharp",
+  "languageTag": "C#",
+  "platformTag": "Console",
+  "projectTypeTag": "console",
+  "sortOrder": 1000,
+  "createNewFolder": true,
+  "provideDefaultName": true,
+  "locationField": "Enabled",
+  "enableLocationBrowseButton": true,
+  "createInPlace": true,
+  "requiredFrameworkVersion": "8.0",
+  "supportedLanguages": ["C#"],
+  "templateGroupIdentity": "DMNSN.Templates",
+  "maxFrameworkVersion": "8.0"
 }
 
