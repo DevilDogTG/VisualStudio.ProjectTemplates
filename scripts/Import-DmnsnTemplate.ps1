@@ -102,6 +102,39 @@ foreach ($zip in $templateZips) {
         Write-Host "✅ Imported: $($zip.Name) -> $TargetFolderName" -ForegroundColor Green
     }
 }
+Write-Host "Finding `devenv` in PATH..."
+$devenvPath = Get-Command devenv -ErrorAction SilentlyContinue
+if (-not $devenvPath) {
+    Write-Host "❌ devenv not found in PATH. using default path." -ForegroundColor Red
+    $vsInstallPath = Join-Path $env:ProgramFiles "Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe"
+    if (Test-Path $vsInstallPath) {
+        $devenvPath = $vsInstallPath
+    } else {
+        Write-Host "❌ devenv not found at default path: $vsInstallPath" -ForegroundColor Red
+        exit 1
+    }
+} else {
+    Write-Host "✅ Found devenv at: $devenvPath" -ForegroundColor Green
+}
+Write-Host "🔄️ Refreshing Visual Studio templates..."
+if ($DryRun) {
+    Write-Host "☑️ Would run: devenv /installvstemplates" -ForegroundColor Yellow
+} else {
+    try {
+        Write-Host "Clearing old cache..."
+        $cachePath = Join-Path $env:LOCALAPPDATA "Microsoft\VisualStudio\17.0\ComponentModelCache"
+        if (Test-Path $cachePath) {
+            Remove-Item -Path $cachePath -Recurse -Force
+        }
+        Write-Host "✅ Cache cleared." -ForegroundColor Green
+        
+        Write-Host "Running: $devenvPath /installvstemplates" -ForegroundColor Cyan
+        & $devenvPath /installvstemplates | Out-Null
+        Write-Host "✅ Visual Studio templates refreshed successfully." -ForegroundColor Green
+    } catch {
+        Write-Host "❌ Failed to refresh Visual Studio templates: $_" -ForegroundColor Red
+    }
+}
 
 Write-Host ""
 Write-Host "ℹ️  Templates available under: $vsTemplateTarget" -ForegroundColor Green
