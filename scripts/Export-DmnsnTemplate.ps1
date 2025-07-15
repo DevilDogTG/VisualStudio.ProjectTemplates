@@ -32,7 +32,7 @@ if (-not (Test-Path $RootPath)) {
 
 $srcPath = Join-Path $RootPath "src"
 $outputPath = Join-Path $RootPath "output"
-$logoPath = Join-Path $RootPath "logo.png"
+$logoPath = Join-Path $RootPath "logo.ico"
 $previewPath = Join-Path $RootPath "preview.png"
 
 # Ensure the log directory exists
@@ -62,38 +62,43 @@ function Generate-ProjectXml {
     param (
         [string]$basePath,
         [string]$folder,
-        [array]$allowedFiles
+        [array]$allowedFiles,
+        [int]$indentLevel = 0
     )
 
+    $indent = '  ' * $indentLevel
     $content = ""
     $currentPath = Join-Path $basePath $folder
-    
-    # Check if path exists
-    if (-not (Test-Path $currentPath)) {
-        Log "⚠ Warning: Path does not exist: $currentPath"
-        return $content
-    }
-    
-    $entries = Get-ChildItem -Path $currentPath -ErrorAction SilentlyContinue | Where-Object {
-        $_.PSIsContainer -or $allowedFiles.FullName -contains $_.FullName
+
+    # Filter entries (folders or allowed files only)
+    $entries = Get-ChildItem -Path $currentPath -Force | Where-Object {
+        if ($_.PSIsContainer) {
+            $subtree = $allowedFiles | Where-Object { $_.FullName.StartsWith($_.FullName) }
+            return $subtree.Count -gt 0
+        } else {
+            return $allowedFiles.FullName -contains $_.FullName
+        }
     }
 
     foreach ($entry in $entries) {
         $relPath = (Join-Path -Path "$folder" -ChildPath "$($entry.Name)") -replace '\\', '/'
 
         if ($entry.PSIsContainer) {
-            $content += "      <Folder Name=""$($entry.Name)"" TargetFolderName=""$($entry.Name)"">`r`n"
-            $content += Generate-ProjectXml -basePath $basePath -folder $relPath -allowedFiles $allowedFiles
-            $content += "      </Folder>`r`n"
-        }
-        else {
-            $content += "        <ProjectItem ReplaceParameters=""true"" TargetFileName=""$($entry.Name)"">$relPath</ProjectItem>`r`n"
+            $childContent = Generate-ProjectXml -basePath $basePath -folder $relPath -allowedFiles $allowedFiles -indentLevel ($indentLevel + 1)
+            if ($childContent.Trim()) {
+                $content += "$indent  <Folder Name=""$($entry.Name)"" TargetFolderName=""$($entry.Name)"">`r`n"
+                $content += $childContent
+                $content += "$indent  </Folder>`r`n"
+                Log "$indent📁 $relPath"
+            }
+        } else {
+            $content += "$indent    <ProjectItem ReplaceParameters=""true"" TargetFileName=""$($entry.Name)"">$($entry.Name)</ProjectItem>`r`n"
+            Log "$indent📄 $relPath"
         }
     }
 
     return $content
 }
-
 # ------------------------ TEMPLATE PROCESS ------------------------
 $projectFolders = Get-ChildItem $srcPath -Directory -ErrorAction SilentlyContinue
 if (-not $projectFolders) {
@@ -203,9 +208,8 @@ foreach ($project in $projectFolders) {
     <LocationField>Enabled</LocationField>
     <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
     <CreateInPlace>true</CreateInPlace>
-    <Icon>__TemplateIcon.png</Icon>
+    <Icon>__TemplateIcon.ico</Icon>
     <PreviewImage>__TemplatePreview.png</PreviewImage>
-    <Category>DMNSN Templates</Category>
   </TemplateData>
   <TemplateContent>
     <Project TargetFileName="$($csproj.Name)" File="$($csproj.Name)" ReplaceParameters="true">
@@ -231,10 +235,10 @@ foreach ($project in $projectFolders) {
 
     # Copy icon/preview
     if (Test-Path $logoPath) {
-        Log "🖼️ Adding logo.png"
+        Log "🖼️ Adding logo.ico"
         if (-not $DryRun) {
             try {
-                Copy-Item $logoPath -Destination (Join-Path $projectPath "__TemplateIcon.png") -Force
+                Copy-Item $logoPath -Destination (Join-Path $projectPath "__TemplateIcon.ico") -Force
             }
             catch {
                 Log "⚠ Warning: Failed to copy logo: $_"
@@ -278,8 +282,8 @@ foreach ($project in $projectFolders) {
 
             # Also copy vstemplate and icons into staging
             Copy-Item -Path $vstemplatePath -Destination (Join-Path $tempZipDir "MyTemplate.vstemplate") -Force
-            if (Test-Path (Join-Path $projectPath "__TemplateIcon.png")) {
-                Copy-Item -Path (Join-Path $projectPath "__TemplateIcon.png") -Destination (Join-Path $tempZipDir "__TemplateIcon.png") -Force
+            if (Test-Path (Join-Path $projectPath "__TemplateIcon.ico")) {
+                Copy-Item -Path (Join-Path $projectPath "__TemplateIcon.ico") -Destination (Join-Path $tempZipDir "__TemplateIcon.ico") -Force
             }
             if (Test-Path (Join-Path $projectPath "__TemplatePreview.png")) {
                 Copy-Item -Path (Join-Path $projectPath "__TemplatePreview.png") -Destination (Join-Path $tempZipDir "__TemplatePreview.png") -Force
@@ -298,7 +302,7 @@ foreach ($project in $projectFolders) {
 
     # Clean up temp files
     if (-not $DryRun) {
-        Remove-Item -Path (Join-Path $projectPath "__TemplateIcon.png") -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path (Join-Path $projectPath "__TemplateIcon.ico") -Force -ErrorAction SilentlyContinue
         Remove-Item -Path (Join-Path $projectPath "__TemplatePreview.png") -Force -ErrorAction SilentlyContinue
         Remove-Item -Path $vstemplatePath -Force -ErrorAction SilentlyContinue
     }
