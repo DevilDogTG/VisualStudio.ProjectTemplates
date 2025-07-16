@@ -1,3 +1,5 @@
+// Ignore Spelling: App
+
 using DMNSN.ConsoleApps.Interfaces.Services;
 using DMNSN.ConsoleApps.Settings;
 using Microsoft.Extensions.Logging;
@@ -6,12 +8,18 @@ using Newtonsoft.Json;
 
 namespace DMNSN.ConsoleApps.Services;
 
+/// <summary>
+/// Represents the application service responsible for running the main application logic.
+/// </summary>
+/// <param name="logger">The logger instance used for logging application events.</param>
+/// <param name="config">The configuration monitor for accessing and tracking changes to application settings.</param>
 public class AppService(
     ILogger<AppService> logger,
     IOptionsMonitor<AppSettings> config) : IAppService, IDisposable
 {
     private readonly ILogger<AppService> logger = logger;
     private readonly IOptionsMonitor<AppSettings> config = config;
+
     private readonly IDisposable? changeSubscription = config.OnChange(
         (settings, name) =>
         {
@@ -32,6 +40,7 @@ public class AppService(
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
+
     protected virtual void Dispose(bool disposing)
     {
         if (disposing)

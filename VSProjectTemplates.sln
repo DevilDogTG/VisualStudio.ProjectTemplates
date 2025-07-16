@@ -30,6 +30,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Templates", "Templates", "{
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{1A78F66F-478E-4C94-AC89-13B157D20C3B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMNSN.Templates.Project.WorkerService", "src\DMNSN.Templates.Project.WorkerService\DMNSN.Templates.Project.WorkerService.csproj", "{5EB5E8F7-8793-4728-8125-48B6FA013F78}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +42,10 @@ Global
 		{0E39F8BE-04C0-4CC7-BB42-E2B535FC7CEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E39F8BE-04C0-4CC7-BB42-E2B535FC7CEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E39F8BE-04C0-4CC7-BB42-E2B535FC7CEA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5EB5E8F7-8793-4728-8125-48B6FA013F78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EB5E8F7-8793-4728-8125-48B6FA013F78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EB5E8F7-8793-4728-8125-48B6FA013F78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5EB5E8F7-8793-4728-8125-48B6FA013F78}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -48,6 +54,7 @@ Global
 		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {A8E21B90-F049-4270-912F-BC5C1AC937AE}
 		{0E39F8BE-04C0-4CC7-BB42-E2B535FC7CEA} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{1A78F66F-478E-4C94-AC89-13B157D20C3B} = {A8E21B90-F049-4270-912F-BC5C1AC937AE}
+		{5EB5E8F7-8793-4728-8125-48B6FA013F78} = {1A78F66F-478E-4C94-AC89-13B157D20C3B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A670202C-0AF4-4407-99B4-173B53CA9271}

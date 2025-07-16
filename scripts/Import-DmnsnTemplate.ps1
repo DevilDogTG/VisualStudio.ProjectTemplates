@@ -181,6 +181,5 @@ if ($importedAny) {
     Log "⏩ No new templates imported. Skipping devenv refresh."
 }
 
-Log ""
 Log "ℹ️  Templates available under: $vsTemplateTarget"
 Log "ℹ️  Launch Visual Studio -> File -> New -> Project -> Search your template"

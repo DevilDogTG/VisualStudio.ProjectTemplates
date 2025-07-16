@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using System.Configuration;
 using System.Reflection;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -24,7 +23,7 @@ builder.Configuration.AddJsonFile(
 var loggingSettings = builder.Configuration
     .GetSection(ConfigureKey.Logging)
     .Get<LoggingSettings>()
-        ?? throw new ConfigurationErrorsException("LoggingSettings configuration not found.");
+        ?? throw new InvalidOperationException("LoggingSettings configuration not found.");
 
 
 builder.Services.AddSerilog(logger =>
