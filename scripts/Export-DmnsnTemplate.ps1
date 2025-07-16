@@ -109,20 +109,100 @@ if (-not $projectFolders) {
 $tempWorkRoot = Join-Path $env:TEMP ('VSExport_' + [guid]::NewGuid())
 
 foreach ($project in $projectFolders) {
-    $projectPath = $project.FullName
-    $configPath = Join-Path $projectPath "template.config.json"
-    
+    $originalProjectPath = $project.FullName
+    $configPath = Join-Path $originalProjectPath "template.config.json"
+    $hashFilePath = Join-Path $originalProjectPath ".template.hash"
+
     if (-not (Test-Path $configPath)) {
         Log "⚠ Skipping '$($project.Name)' (no config file)"
         continue
     }
 
+    # --- HASH CONTENTS TO DETECT CHANGES (ON ORIGINAL PROJECT DIR) ---
+    $excludedDirs = @("bin", "obj", "logs", ".vs", ".git")
+    $excludedFiles = @(".zip", ".vstemplate", ".user", ".suo", ".gitignore", ".gitattributes")
+    $excludedNames = @("template.config.json", ".template.hash")
+    $filesToHash = Get-ChildItem -Path $originalProjectPath -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
+        $relativePath = $_.FullName.Substring($originalProjectPath.Length + 1)
+        $pathParts = $relativePath -split '[\\/]'
+        $isInExcludedDir = ($pathParts | Where-Object { $excludedDirs -contains $_ }).Count -gt 0
+        $isExcludedExt = $excludedFiles -contains $_.Extension.ToLower()
+        $isExcludedName = $excludedNames -contains $_.Name
+        -not ($isInExcludedDir -or $isExcludedExt -or $isExcludedName)
+    }
+    function Get-ProjectContentHash {
+        param([array]$files)
+        $hashes = @()
+        foreach ($file in $files | Sort-Object FullName) {
+            # Normalize content: trim whitespace, unify line endings, remove empty lines
+            $lines = Get-Content -Path $file.FullName -Raw | Out-String |
+                ForEach-Object { $_ -replace "`r`n", "`n" } |
+                ForEach-Object { $_ -split "`n" } |
+                ForEach-Object { $_.Trim() } |
+                Where-Object { $_ -ne "" }
+            $normalizedContent = ($lines -join "`n")
+            $hash = [System.BitConverter]::ToString(
+                [System.Security.Cryptography.SHA256]::Create().ComputeHash(
+                    [System.Text.Encoding]::UTF8.GetBytes($normalizedContent)
+                )
+            ).Replace("-", "").ToLower()
+            $rel = $file.FullName.Substring($originalProjectPath.Length + 1).ToLower().Replace("\", "/")
+            $hashes += "${rel}:${hash}"
+        }
+        $combined = $hashes -join "`n"
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($combined)
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        $finalHash = [BitConverter]::ToString($sha256.ComputeHash($bytes)).Replace("-", "").ToLower()
+        return $finalHash
+    }
+    $previousHash = $null
+    if (Test-Path $hashFilePath) {
+        $previousHash = (Get-Content $hashFilePath -Raw).Trim()
+    }
+    $currentHash = Get-ProjectContentHash $filesToHash
+
+    # --- VERSION/EXPORT DECISION ---
+    $config = Get-Content $configPath | ConvertFrom-Json
+    $version = $config.version
+    $projectPath = $originalProjectPath
+    $skipExport = $false
+    $autoBumpVersion = $false
+    $newVersion = $version
+    $zipName = "{0}-v{1}.zip" -f $project.Name, $version
+    $zipPath = Join-Path $outputPath $zipName
+    Log "🔢 Previous Hash: $previousHash"
+    Log "🔢 Current Hash: $currentHash"
+    if ($previousHash -and $previousHash -eq $currentHash) {
+        Log "⏩ Skipping export for '$($project.Name)' (content unchanged, hash matched)"
+        $skipExport = $true
+    } else {
+        # Auto-increment patch version if content changed
+        $autoBumpVersion = $true
+        $verParts = $version -split '\.'
+        if ($verParts.Length -eq 3) {
+            $verParts[2] = [int]$verParts[2] + 1
+            $newVersion = "$($verParts[0]).$($verParts[1]).$($verParts[2])"
+        } else {
+            $newVersion = "$version.1"
+        }
+        Log "🔄 Content changed, auto-incrementing patch version: $version → $newVersion"
+        # Update template.config.json
+        $config.version = $newVersion
+        $config | ConvertTo-Json -Depth 10 | Set-Content $configPath -Encoding UTF8
+        # Reload config and update version/zip variables
+        $version = $newVersion
+        $zipName = "{0}-v{1}.zip" -f $project.Name, $version
+        $zipPath = Join-Path $outputPath $zipName
+    }
+    if ($skipExport) { continue }
+
     # --- BEGIN TEMP WORKDIR PATCH ---
     try {
         New-Item -ItemType Directory -Path $tempWorkRoot -Force | Out-Null
         $tempProjectPath = Join-Path $tempWorkRoot $project.Name
-        Copy-Item -Path $projectPath -Destination $tempProjectPath -Recurse -Force
+        Copy-Item -Path $originalProjectPath -Destination $tempProjectPath -Recurse -Force
         $projectPath = $tempProjectPath
+        $vstemplatePath = Join-Path $projectPath "MyTemplate.vstemplate"
     }
     catch {
         Log "❌ ERROR: Failed to create temp directory: $_"
@@ -134,6 +214,25 @@ foreach ($project in $projectFolders) {
         $templateName = $config.name
         $description = $config.description
         $global:oldNamespace = $config.defaultNamespace
+        
+        # Enhanced configuration properties with defaults
+        $author = if ($config.author) { $config.author } else { "Unknown" }
+        $version = if ($config.version) { $config.version } else { "1.0.0" }
+        $tags = if ($config.tags) { $config.tags -join "," } else { "" }
+        $category = if ($config.category) { $config.category } else { "General" }
+        $projectType = if ($config.projectType) { $config.projectType } else { "CSharp" }
+        $languageTag = if ($config.languageTag) { $config.languageTag } else { "C#" }
+        $projectTypeTag = if ($config.projectTypeTag) { $config.projectTypeTag } else { "project" }
+        $sortOrder = if ($config.sortOrder) { $config.sortOrder } else { 1000 }
+        $createNewFolder = if ($config.createNewFolder -ne $null) { $config.createNewFolder.ToString().ToLower() } else { "true" }
+        $provideDefaultName = if ($config.provideDefaultName -ne $null) { $config.provideDefaultName.ToString().ToLower() } else { "true" }
+        $locationField = if ($config.locationField) { $config.locationField } else { "Enabled" }
+        $enableLocationBrowseButton = if ($config.enableLocationBrowseButton -ne $null) { $config.enableLocationBrowseButton.ToString().ToLower() } else { "true" }
+        $createInPlace = if ($config.createInPlace -ne $null) { $config.createInPlace.ToString().ToLower() } else { "true" }
+        $requiredFrameworkVersion = if ($config.requiredFrameworkVersion) { $config.requiredFrameworkVersion } else { "4.0" }
+        $maxFrameworkVersion = if ($config.maxFrameworkVersion) { $config.maxFrameworkVersion } else { "" }
+        $templateGroupIdentity = if ($config.templateGroupIdentity) { $config.templateGroupIdentity } else { "" }
+        $supportedLanguages = if ($config.supportedLanguages) { $config.supportedLanguages -join "," } else { "C#" }
     }
     catch {
         Log "❌ ERROR: Failed to parse config file: $_"
@@ -146,17 +245,30 @@ foreach ($project in $projectFolders) {
         continue
     }
 
-    $zipName = "$($project.Name).zip"
-    $zipPath = Join-Path $outputPath $zipName
-    $vstemplatePath = Join-Path $projectPath "MyTemplate.vstemplate"
+    # --- REMOVE OLD VERSIONS ---
+    $oldZips = Get-ChildItem -Path $outputPath -Filter ("{0}-v*.zip" -f $project.Name) -ErrorAction SilentlyContinue
+    foreach ($oldZip in $oldZips) {
+        if ($oldZip.FullName -ne $zipPath) {
+            Log "🗑️ Removing old version: $($oldZip.Name)"
+            if (-not $DryRun) {
+                Remove-Item $oldZip.FullName -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
 
     Log "⚙ Processing '$($project.Name)'..."
+    Log "📋 Template Name: $templateName"
+    Log "👤 Author: $author"
+    Log "🔢 Version: $version"
+    Log "🏷️ Tags: $tags"
+    Log "📂 Category: $category"
+    Log "🎯 Project Type: $projectType"
     if ($DryRun) { Log "🔍 [DryRun] No changes will be made." }
 
     # Filter included files
     $excludedDirs = @("bin", "obj", "logs", ".vs", ".git")
     $excludedFiles = @(".zip", ".vstemplate", ".user", ".suo", ".gitignore", ".gitattributes")
-    $excludedNames = @("template.config.json")
+    $excludedNames = @("template.config.json", ".template.hash")
 
     $filesToInclude = Get-ChildItem -Path $projectPath -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
         $relativePath = $_.FullName.Substring($projectPath.Length + 1)
@@ -200,16 +312,54 @@ foreach ($project in $projectFolders) {
   <TemplateData>
     <Name>$templateName</Name>
     <Description>$description</Description>
-    <ProjectType>CSharp</ProjectType>
-    <SortOrder>1000</SortOrder>
-    <CreateNewFolder>true</CreateNewFolder>
+    <ProjectType>$projectType</ProjectType>
+    <SortOrder>$sortOrder</SortOrder>
+    <CreateNewFolder>$createNewFolder</CreateNewFolder>
     <DefaultName>$global:oldNamespace</DefaultName>
-    <ProvideDefaultName>true</ProvideDefaultName>
-    <LocationField>Enabled</LocationField>
-    <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
-    <CreateInPlace>true</CreateInPlace>
+    <ProvideDefaultName>$provideDefaultName</ProvideDefaultName>
+    <LocationField>$locationField</LocationField>
+    <EnableLocationBrowseButton>$enableLocationBrowseButton</EnableLocationBrowseButton>
+    <CreateInPlace>$createInPlace</CreateInPlace>
     <Icon>__TemplateIcon.ico</Icon>
     <PreviewImage>__TemplatePreview.png</PreviewImage>
+"@
+
+    # Add optional elements if they exist
+    if ($author -ne "Unknown") {
+        $vstemplate += "    <Author>$author</Author>`r`n"
+    }
+    if ($version -ne "1.0.0") {
+        $vstemplate += "    <Version>$version</Version>`r`n"
+    }
+    if ($tags) {
+        $vstemplate += "    <ProjectSubType>$tags</ProjectSubType>`r`n"
+    }
+    if ($category -ne "General") {
+        $vstemplate += "    <ProjectCategory>$category</ProjectCategory>`r`n"
+    }
+    if ($languageTag) {
+        $vstemplate += "    <LanguageTag>$languageTag</LanguageTag>`r`n"
+    }
+    if ($platformTag) {
+        $vstemplate += "    <PlatformTag>$platformTag</PlatformTag>`r`n"
+    }
+    if ($projectTypeTag) {
+        $vstemplate += "    <ProjectTypeTag>$projectTypeTag</ProjectTypeTag>`r`n"
+    }
+    if ($requiredFrameworkVersion) {
+        $vstemplate += "    <RequiredFrameworkVersion>$requiredFrameworkVersion</RequiredFrameworkVersion>`r`n"
+    }
+    if ($maxFrameworkVersion) {
+        $vstemplate += "    <MaxFrameworkVersion>$maxFrameworkVersion</MaxFrameworkVersion>`r`n"
+    }
+    if ($templateGroupIdentity) {
+        $vstemplate += "    <TemplateGroupID>$templateGroupIdentity</TemplateGroupID>`r`n"
+    }
+    if ($supportedLanguages) {
+        $vstemplate += "    <SupportedLanguages>$supportedLanguages</SupportedLanguages>`r`n"
+    }
+
+    $vstemplate += @"
   </TemplateData>
   <TemplateContent>
     <Project TargetFileName="$($csproj.Name)" File="$($csproj.Name)" ReplaceParameters="true">
@@ -305,6 +455,14 @@ foreach ($project in $projectFolders) {
         Remove-Item -Path (Join-Path $projectPath "__TemplateIcon.ico") -Force -ErrorAction SilentlyContinue
         Remove-Item -Path (Join-Path $projectPath "__TemplatePreview.png") -Force -ErrorAction SilentlyContinue
         Remove-Item -Path $vstemplatePath -Force -ErrorAction SilentlyContinue
+    }
+
+    # After successful export, update hash file in original project folder
+    if (-not $DryRun) {
+        Log "📄 Write current hashing value: $hashFilePath"
+        Set-Content -Path $hashFilePath -Value $currentHash -Encoding UTF8
+    } else {
+        Log "⚠ Skipping hash write on DryRun"
     }
 
     Log "✅ Done: $zipPath`n"

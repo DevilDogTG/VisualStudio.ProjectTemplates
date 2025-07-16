@@ -1,11 +1,33 @@
 param (
     [string]$TargetFolderName = "DMNSN",
-    [switch]$DryRun
+    [switch]$DryRun,
+    [string]$LogPath
 )
 
 $ErrorActionPreference = "Stop"
 $RootPath = (Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent)
 $SourcePath = Join-Path $RootPath "output"
+
+# ------------------------ LOGGING ------------------------
+function Log {
+    param ([string]$msg)
+    Write-Host $msg
+    if ($LogPath) {
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        Add-Content -Path $LogPath -Value ("[{0}] {1}" -f $timestamp, $msg)
+    }
+}
+
+# Enable error handling
+$ErrorActionPreference = "Stop"
+
+# Set root path is 1 level up from the script path
+$RootPath = (Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent)
+
+# Initialize LogPath if not provided
+if (-not $LogPath) {
+    $LogPath = Join-Path $RootPath ("logs\importing-" + (Get-Date -Format "yyyyMMdd-HHmmss") + ".log")
+}
 
 function Expand-VSEnvironmentVariable {
     param([string]$Path)
@@ -17,7 +39,7 @@ function Expand-VSEnvironmentVariable {
     if ($Path.Contains('%vsspv_user_appdata%')) {
         $userProfilePath = $env:USERPROFILE
         
-        Write-Host "🔄️ Resolving %vsspv_user_appdata% to user profile: $userProfilePath" -ForegroundColor Blue
+        Log "🔄️ Resolving %vsspv_user_appdata% to user profile: $userProfilePath"
         $Path = $Path -replace '%vsspv_user_appdata%', $userProfilePath
     }
     
@@ -32,20 +54,20 @@ function Get-VSProjectTemplatePath {
     $defaultPath = Join-Path $env:USERPROFILE "Documents\Visual Studio 2022\Templates\ProjectTemplates"
     $basePath = Join-Path $env:LOCALAPPDATA "Microsoft\VisualStudio"
 
-    Write-Host "🔍 Scanning for ProjectTemplatesLocation setting..." -ForegroundColor Blue
+    Log "🔍 Scanning for ProjectTemplatesLocation setting..."
 
     $settingsFiles = Get-ChildItem -Path $basePath -Recurse -Filter "CurrentSettings.vssettings" -ErrorAction SilentlyContinue
 
     foreach ($file in $settingsFiles) {
-        Write-Host "📄 Checking settings file: $($file.FullName)" -ForegroundColor Gray
+        Log "📄 Checking settings file: $($file.FullName)"
         try {
             [xml]$xml = Get-Content $file.FullName
             $nodes = $xml.SelectNodes("//PropertyValue[@name='ProjectTemplatesLocation']")
-            Write-Host "👌 Found $($nodes.Count) nodes for ProjectTemplatesLocation" -ForegroundColor Blue
+            Log "👌 Found $($nodes.Count) nodes for ProjectTemplatesLocation"
             foreach ($node in $nodes) {
-                Write-Host "📍 Node found: $($node.OuterXml)" -ForegroundColor Gray
+                Log "📍 Node found: $($node.OuterXml)"
                 $rawValue = $node.'#text'
-                Write-Host "#️⃣  Raw value: $rawValue" -ForegroundColor Blue
+                Log "🔢 Raw value: $rawValue"
                 if (-not $rawValue) {
                     $valueNode = $node.SelectSingleNode("Value")
                     if ($valueNode) {
@@ -55,27 +77,27 @@ function Get-VSProjectTemplatePath {
 
                 if ($rawValue) {
                     $expandedValue = Expand-VSEnvironmentVariable -Path $rawValue
-                    Write-Host "💥 Expanded value: $expandedValue" -ForegroundColor Blue
+                    Log "💥 Expanded value: $expandedValue"
                     
                     if (Test-Path $expandedValue) {
-                        Write-Host "✅ Found custom template path: $expandedValue" -ForegroundColor Green
+                        Log "✅ Found custom template path: $expandedValue"
                         return $expandedValue
                     } else {
-                        Write-Host "⚠️ Path does not exist: $expandedValue" -ForegroundColor Yellow
+                        Log "⚠️ Path does not exist: $expandedValue"
                     }
                 }
             }
         } catch {
-            Write-Host "❌ Error reading $($file.FullName): $_" -ForegroundColor Red
+            Log "❌ Error reading $($file.FullName): $_"
         }
     }
 
-    Write-Host "⚠️ No custom setting found. Using default: $defaultPath" -ForegroundColor Gray
+    Log "⚠️ No custom setting found. Using default: $defaultPath"
     return $defaultPath
 }
 
 $vsTemplateBase = Get-VSProjectTemplatePath
-Write-Host "📂 Visual Studio Project Templates Path: $vsTemplateBase" -ForegroundColor Cyan
+Log "📂 Visual Studio Project Templates Path: $vsTemplateBase"
 $vsTemplateTarget = Join-Path $vsTemplateBase $TargetFolderName
 
 if (-not $DryRun -and -not (Test-Path $vsTemplateTarget)) {
@@ -85,57 +107,80 @@ if (-not $DryRun -and -not (Test-Path $vsTemplateTarget)) {
 $templateZips = Get-ChildItem -Path $SourcePath -Filter *.zip
 
 if ($templateZips.Count -eq 0) {
-    Write-Host "⚠️ No templates found in: $SourcePath" -ForegroundColor Yellow
+    Log "⚠️ No templates found in: $SourcePath"
     exit 0
 }
 
-Write-Host "👌 Found $($templateZips.Count) template(s) to import from: $SourcePath" -ForegroundColor Cyan
-Write-Host "📂 Target path: $vsTemplateTarget" -ForegroundColor Cyan
+Log "👌 Found $($templateZips.Count) template(s) to import from: $SourcePath"
+Log "📂 Target path: $vsTemplateTarget"
 
+$importedAny = $false
 foreach ($zip in $templateZips) {
+    # --- REMOVE OLD VERSIONS IN DESTINATION ---
+    $baseName = $zip.Name -replace '-v[\d\.]+\.zip$', ''
+    $oldDestZips = Get-ChildItem -Path $vsTemplateTarget -Filter ("$baseName-v*.zip") -ErrorAction SilentlyContinue
+    foreach ($oldDest in $oldDestZips) {
+        if ($oldDest.Name -ne $zip.Name) {
+            Log "🗑️ Removing old version from destination: $($oldDest.Name)"
+            if (-not $DryRun) {
+                Remove-Item $oldDest.FullName -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+
     $destPath = Join-Path $vsTemplateTarget $zip.Name
 
+    if (Test-Path $destPath) {
+        Log "⏩ Skipping import (already up-to-date): $($zip.Name)"
+        continue
+    }
+
     if ($DryRun) {
-        Write-Host "☑️ Would copy: $($zip.FullName) -> $destPath" -ForegroundColor Yellow
+        Log "☑️ Would copy: $($zip.FullName) -> $destPath"
     } else {
         Copy-Item -Path $zip.FullName -Destination $destPath -Force
-        Write-Host "✅ Imported: $($zip.Name) -> $TargetFolderName" -ForegroundColor Green
-    }
-}
-Write-Host "Finding `devenv` in PATH..."
-$devenvPath = Get-Command devenv -ErrorAction SilentlyContinue
-if (-not $devenvPath) {
-    Write-Host "❌ devenv not found in PATH. using default path." -ForegroundColor Red
-    $vsInstallPath = Join-Path $env:ProgramFiles "Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe"
-    if (Test-Path $vsInstallPath) {
-        $devenvPath = $vsInstallPath
-    } else {
-        Write-Host "❌ devenv not found at default path: $vsInstallPath" -ForegroundColor Red
-        exit 1
-    }
-} else {
-    Write-Host "✅ Found devenv at: $devenvPath" -ForegroundColor Green
-}
-Write-Host "🔄️ Refreshing Visual Studio templates..."
-if ($DryRun) {
-    Write-Host "☑️ Would run: devenv /installvstemplates" -ForegroundColor Yellow
-} else {
-    try {
-        Write-Host "Clearing old cache..."
-        $cachePath = Join-Path $env:LOCALAPPDATA "Microsoft\VisualStudio\17.0\ComponentModelCache"
-        if (Test-Path $cachePath) {
-            Remove-Item -Path $cachePath -Recurse -Force
-        }
-        Write-Host "✅ Cache cleared." -ForegroundColor Green
-        
-        Write-Host "Running: $devenvPath /installvstemplates" -ForegroundColor Cyan
-        & $devenvPath /installvstemplates | Out-Null
-        Write-Host "✅ Visual Studio templates refreshed successfully." -ForegroundColor Green
-    } catch {
-        Write-Host "❌ Failed to refresh Visual Studio templates: $_" -ForegroundColor Red
+        Log "✅ Imported: $($zip.Name) -> $TargetFolderName"
+        $importedAny = $true
     }
 }
 
-Write-Host ""
-Write-Host "ℹ️  Templates available under: $vsTemplateTarget" -ForegroundColor Green
-Write-Host "ℹ️  Launch Visual Studio -> File -> New -> Project -> Search your template" -ForegroundColor Cyan
+if ($importedAny) {
+    Log "Finding `devenv` in PATH..."
+    $devenvPath = Get-Command devenv -ErrorAction SilentlyContinue
+    if (-not $devenvPath) {
+        Log "❌ devenv not found in PATH. using default path."
+        $vsInstallPath = Join-Path $env:ProgramFiles "Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe"
+        if (Test-Path $vsInstallPath) {
+            $devenvPath = $vsInstallPath
+        } else {
+            Log "❌ devenv not found at default path: $vsInstallPath"
+            exit 1
+        }
+    } else {
+        Log "✅ Found devenv at: $devenvPath"
+    }
+    Log "🔄️ Refreshing Visual Studio templates..."
+    if ($DryRun) {
+        Log "☑️ Would run: devenv /installvstemplates"
+    } else {
+        try {
+            Log "Clearing old cache..."
+            $cachePath = Join-Path $env:LOCALAPPDATA "Microsoft\VisualStudio\17.0\ComponentModelCache"
+            if (Test-Path $cachePath) {
+                Remove-Item -Path $cachePath -Recurse -Force
+            }
+            Log "✅ Cache cleared."
+            Log "Running: $devenvPath /installvstemplates"
+            & $devenvPath /installvstemplates | Out-Null
+            Log "✅ Visual Studio templates refreshed successfully."
+        } catch {
+            Log "❌ Failed to refresh Visual Studio templates: $_"
+        }
+    }
+} else {
+    Log "⏩ No new templates imported. Skipping devenv refresh."
+}
+
+Log ""
+Log "ℹ️  Templates available under: $vsTemplateTarget"
+Log "ℹ️  Launch Visual Studio -> File -> New -> Project -> Search your template"

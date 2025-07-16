@@ -10,7 +10,7 @@
     <Company>DevDogs</Company>
     <Description>Visual Studio TemplaProject Templateproject templates</Description>
     <Copyright>Copyright 2025 @ DevDogs</Copyright>
-    <PackageProjectUrl>https://www.oneweb.co.th</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/DevilDogTG/VisualStudio.ProjectTemplates</PackageProjectUrl>
     <ApplicationIcon>logo.ico</ApplicationIcon>
     <Authors>DevilDogTG</Authors>
     <Company>DevDogs</Company>
@@ -28,15 +28,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\LICENSE">
+    <None Include="LICENSE">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="..\..\logo.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\..\README.md">
+    <None Include="logo.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
@@ -67,6 +63,10 @@
     </None>
     <None Update="logsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
 
