@@ -93,6 +93,18 @@ Write-Host "👌 Found $($templateZips.Count) template(s) to import from: $Sourc
 Write-Host "📂 Target path: $vsTemplateTarget" -ForegroundColor Cyan
 
 foreach ($zip in $templateZips) {
+    # --- REMOVE OLD VERSIONS IN DESTINATION ---
+    $baseName = $zip.Name -replace '-v[\d\.]+\.zip$', ''
+    $oldDestZips = Get-ChildItem -Path $vsTemplateTarget -Filter ("$baseName-v*.zip") -ErrorAction SilentlyContinue
+    foreach ($oldDest in $oldDestZips) {
+        if ($oldDest.Name -ne $zip.Name) {
+            Write-Host "🗑️ Removing old version from destination: $($oldDest.Name)" -ForegroundColor Yellow
+            if (-not $DryRun) {
+                Remove-Item $oldDest.FullName -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+
     $destPath = Join-Path $vsTemplateTarget $zip.Name
 
     if ($DryRun) {

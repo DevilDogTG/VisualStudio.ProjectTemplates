@@ -166,9 +166,21 @@ foreach ($project in $projectFolders) {
         continue
     }
 
-    $zipName = "$($project.Name).zip"
+    # --- VERSIONED ZIP NAME ---
+    $zipName = "{0}-v{1}.zip" -f $project.Name, $version
     $zipPath = Join-Path $outputPath $zipName
     $vstemplatePath = Join-Path $projectPath "MyTemplate.vstemplate"
+
+    # --- REMOVE OLD VERSIONS ---
+    $oldZips = Get-ChildItem -Path $outputPath -Filter ("{0}-v*.zip" -f $project.Name) -ErrorAction SilentlyContinue
+    foreach ($oldZip in $oldZips) {
+        if ($oldZip.FullName -ne $zipPath) {
+            Log "🗑️ Removing old version: $($oldZip.Name)"
+            if (-not $DryRun) {
+                Remove-Item $oldZip.FullName -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
 
     Log "⚙ Processing '$($project.Name)'..."
     Log "📋 Template Name: $templateName"
