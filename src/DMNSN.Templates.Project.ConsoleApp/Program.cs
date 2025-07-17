@@ -1,6 +1,6 @@
-using DMNSN.ConsoleApps.Services;
 using DMNSN.Core.Constraints;
 using DMNSN.Core.Settings;
+using DMNSN.Templates.Project.ConsoleApp.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -24,7 +24,6 @@ var loggingSettings = builder.Configuration
     .GetSection(ConfigureKey.Logging)
     .Get<LoggingSettings>()
         ?? throw new InvalidOperationException("LoggingSettings configuration not found.");
-
 
 builder.Services.AddSerilog(logger =>
 {

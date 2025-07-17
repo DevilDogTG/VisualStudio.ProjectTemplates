@@ -24,7 +24,7 @@ The enhanced template configuration system allows you to define comprehensive me
 {
   "name": "DMNSN Console Application",
   "description": "A modern console application template with logging, dependency injection, and configuration support",
-  "defaultNamespace": "DMNSN.ConsoleApps",
+  "defaultNamespace": "DMNSN.Templates.Project.ConsoleApp",
   "author": "DMNSN",
   "version": "1.0.0",
   "tags": ["Console", "Application", "Logging", "DependencyInjection", "Configuration"],
@@ -118,7 +118,7 @@ The configuration properties are mapped to the following VSTemplate elements:
     <ProjectType>CSharp</ProjectType>
     <SortOrder>1000</SortOrder>
     <CreateNewFolder>true</CreateNewFolder>
-    <DefaultName>DMNSN.ConsoleApps</DefaultName>
+    <DefaultName>DMNSN.Templates.Project.ConsoleApp</DefaultName>
     <ProvideDefaultName>true</ProvideDefaultName>
     <LocationField>Enabled</LocationField>
     <EnableLocationBrowseButton>true</EnableLocationBrowseButton>
@@ -162,7 +162,7 @@ The configuration properties are mapped to the following VSTemplate elements:
 When running the export script, you'll see enhanced logging that shows the applied configuration:
 
 ```
-⚙ Processing 'DMNSN.ConsoleApps'...
+⚙ Processing 'DMNSN.Templates.Project.ConsoleApp'...
 📋 Template Name: DMNSN Console Application
 👤 Author: DMNSN
 🔢 Version: 1.0.0

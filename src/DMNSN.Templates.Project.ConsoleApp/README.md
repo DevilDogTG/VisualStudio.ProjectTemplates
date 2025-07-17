@@ -1,6 +1,6 @@
-## DMNSN.ConsoleApps code style
+## DMNSN.Templates.Project.ConsoleApp code style
 
-`DMNSN.ConsoleApps` is the reference implementation for these templates. The project adopts a concise C# layout with the following characteristics:
+`DMNSN.Templates.Project.ConsoleApp` is the reference implementation for these templates. The project adopts a concise C# layout with the following characteristics:
 
 - **Top-level statements** in `Program.cs` configure the host and Serilog
   without an explicit `Main` method.

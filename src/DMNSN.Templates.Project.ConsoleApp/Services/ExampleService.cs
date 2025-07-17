@@ -1,21 +1,14 @@
-// Ignore Spelling: App
-
-using DMNSN.ConsoleApps.Interfaces.Services;
-using DMNSN.ConsoleApps.Settings;
+using DMNSN.Templates.Project.ConsoleApp.Interfaces.Services;
+using DMNSN.Templates.Project.ConsoleApp.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
-namespace DMNSN.ConsoleApps.Services;
+namespace DMNSN.Templates.Project.ConsoleApp.Services;
 
-/// <summary>
-/// Represents the application service responsible for running the main application logic.
-/// </summary>
-/// <param name="logger">The logger instance used for logging application events.</param>
-/// <param name="config">The configuration monitor for accessing and tracking changes to application settings.</param>
-public class AppService(
+public class ExampleService(
     ILogger<AppService> logger,
-    IOptionsMonitor<AppSettings> config) : IAppService, IDisposable
+    IOptionsMonitor<AppSettings> config) : IExampleService, IDisposable
 {
     private readonly ILogger<AppService> logger = logger;
     private readonly IOptionsMonitor<AppSettings> config = config;
@@ -26,10 +19,10 @@ public class AppService(
             logger.LogInformation("Configuration changed: {AppName}", settings.ApplicationName);
         });
 
-    public int Run(AppArgs args)
+    public int Run(ExampleArgs args)
     {
         var currentSettings = config.CurrentValue;
-        logger.LogInformation("Running {Name}", nameof(AppService));
+        logger.LogInformation("Running {Name}", nameof(ExampleService));
         logger.LogInformation("Application Name: {AppName}", currentSettings.ApplicationName);
         logger.LogInformation("Args: {Args}", JsonConvert.SerializeObject(args));
         return 0;

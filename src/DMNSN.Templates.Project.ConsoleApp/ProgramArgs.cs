@@ -1,6 +1,6 @@
 using CommandLine;
 
-namespace DMNSN.ConsoleApps;
+namespace DMNSN.Templates.Project.ConsoleApp;
 
 /// <summary>
 /// Represents the command-line arguments for running the application.

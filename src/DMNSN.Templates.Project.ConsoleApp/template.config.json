@@ -3,7 +3,7 @@
   "category": "Console",
   "createInPlace": true,
   "createNewFolder": true,
-  "defaultNamespace": "DMNSN.ConsoleApps",
+  "defaultNamespace": "DMNSN.Templates.Project.ConsoleApp",
   "description": "A modern console application template with logging, dependency injection, and configuration support",
   "enableLocationBrowseButton": true,
   "languageTag": "C#",
