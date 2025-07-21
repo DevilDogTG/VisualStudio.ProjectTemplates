@@ -12,16 +12,16 @@ namespace DMNSN.Templates.Project.ConsoleApp.Services;
 /// <param name="logger">The logger instance used for logging application events.</param>
 /// <param name="config">The configuration monitor for accessing and tracking changes to application settings.</param>
 public class AppService(
-    ILogger<AppService> logger,
-    IOptionsMonitor<AppSettings> config) : IAppService, IDisposable
+    ILogger<AppService> _logger,
+    IOptionsMonitor<AppSettings> _config) : IAppService, IDisposable
 {
-    private readonly ILogger<AppService> logger = logger;
-    private readonly IOptionsMonitor<AppSettings> config = config;
+    private readonly ILogger<AppService> logger = _logger;
+    private readonly IOptionsMonitor<AppSettings> config = _config;
 
-    private readonly IDisposable? changeSubscription = config.OnChange(
+    private readonly IDisposable? changeSubscription = _config.OnChange(
         (settings, name) =>
         {
-            logger.LogInformation("Configuration changed: {AppName}", settings.ApplicationName);
+            _logger.LogInformation("Configuration changed: {AppName}", settings.ApplicationName);
         });
 
     public int Run(AppArgs args)
