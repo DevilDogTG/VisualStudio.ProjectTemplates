@@ -13,6 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Assets", "Assets", "{449C53
 		LICENSE = LICENSE
 		logo.png = logo.png
 		README.md = README.md
+		TEMPLATE_CONFIG_GUIDE.md = TEMPLATE_CONFIG_GUIDE.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{7ADA4614-E6A3-4CCB-A689-AC4F30608833}"
