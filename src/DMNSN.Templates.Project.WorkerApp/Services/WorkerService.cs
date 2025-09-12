@@ -18,15 +18,16 @@ public class WorkerService(
             {
                 try
                 {
-                    using (var scope = scopeFactory.CreateScope())
-                    {
-                        var appService = scope.ServiceProvider.GetRequiredService<IAppService>();
-                        await appService.RunProcessAsync(stoppingToken);
-                    }
+                    using var scope = scopeFactory.CreateScope();
+                    var appService = scope.ServiceProvider.GetRequiredService<IAppService>();
+                    await appService.RunProcessAsync(stoppingToken);
                 }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                catch (OperationCanceledException oe) when (stoppingToken.IsCancellationRequested)
                 {
                     // Graceful shutdown, do not log as error
+                    logger.LogInformation(oe, "WorkerService is stopping due to cancellation at: {Time} [{Message}]",
+                        DateTimeOffset.Now,
+                        oe.Message);
                     break;
                 }
                 catch (Exception ex)
