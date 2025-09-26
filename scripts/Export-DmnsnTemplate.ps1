@@ -214,7 +214,7 @@ foreach ($project in $projectFolders) {
         $templateName = $config.name
         $description = $config.description
         $global:oldNamespace = $config.defaultNamespace
-        
+
         # Enhanced configuration properties with defaults
         $author = if ($config.author) { $config.author } else { "Unknown" }
         $version = if ($config.version) { $config.version } else { "1.0.0" }
@@ -412,7 +412,7 @@ foreach ($project in $projectFolders) {
     if (-not $DryRun) {
         try {
             if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-            
+
             # Build relative paths for inclusion
             $tempZipDir = Join-Path $projectPath "_template_build"
             if (Test-Path $tempZipDir) {

@@ -74,5 +74,5 @@ Copy-Item -Path .\export\* -Destination "$env:USERPROFILE\Documents\Visual Studi
 Then, you can create a new project using the template in Visual Studio.
 
 
-For details on the coding style used in the sample console app, see [src/DMNSN.ConsoleApps/README.md](src/DMNSN.ConsoleApps/README.md).
+For details on the coding style used in the sample console app, see [src/DMNSN.Templates.Project.ConsoleApp/README.md](src/DMNSN.Templates.Project.ConsoleApp/README.md).
 

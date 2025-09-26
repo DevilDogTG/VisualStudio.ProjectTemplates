@@ -3,7 +3,7 @@ using CommandLine.Text;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 
-namespace DMNSN.ConsoleApps.Services;
+namespace DMNSN.Templates.Project.ConsoleApp.Services;
 
 public class StartApplication(
     ILogger<StartApplication> _logger,
@@ -11,6 +11,7 @@ public class StartApplication(
     ExampleService exampleService)
 {
     private readonly ILogger<StartApplication> logger = _logger;
+
     private readonly Version version = Assembly
         .GetExecutingAssembly()
         .GetName()

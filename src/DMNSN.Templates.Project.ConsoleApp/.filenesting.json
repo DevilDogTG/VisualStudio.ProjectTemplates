@@ -8,6 +8,12 @@
             "appsettings.*.json"
           ],
           "parent": "appsettings.json"
+        },
+        "logsettings": {
+          "files": [
+            "logsettings.*.json"
+          ],
+          "parent": "logsettings.json"
         }
       }
     }

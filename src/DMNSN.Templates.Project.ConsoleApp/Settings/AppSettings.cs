@@ -1,4 +1,4 @@
-namespace DMNSN.ConsoleApps.Settings;
+namespace DMNSN.Templates.Project.ConsoleApp.Settings;
 
 /// <summary>
 /// Represents the application settings configuration.
