@@ -58,26 +58,141 @@ The enhanced template configuration system allows you to define comprehensive me
 
 ### Optional Properties
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `author` | string | "Unknown" | The author of the template |
-| `version` | string | "1.0.0" | Version of the template |
-| `tags` | array | [] | Tags for categorizing and filtering templates |
-| `category` | string | "General" | Category for template organization |
-| `projectType` | string | "CSharp" | Project type identifier |
-| `languageTag` | string | "C#" | Programming language tag |
-| `platformTag` | string | "Windows" | Target platform tag |
-| `projectTypeTag` | string | "project" | Project type categorization |
-| `sortOrder` | number | 1000 | Sort order in template lists |
-| `createNewFolder` | boolean | true | Whether to create a new folder for the project |
-| `provideDefaultName` | boolean | true | Whether to provide a default project name |
-| `locationField` | string | "Enabled" | Location field behavior |
-| `enableLocationBrowseButton` | boolean | true | Whether to show location browse button |
-| `createInPlace` | boolean | true | Whether to create project in place |
-| `requiredFrameworkVersion` | string | "4.0" | Minimum required framework version |
-| `maxFrameworkVersion` | string | "" | Maximum supported framework version |
-| `templateGroupIdentity` | string | "" | Template group identifier |
-| `supportedLanguages` | array | ["C#"] | List of supported programming languages |
+| Property | Type | Default | Description | Possible Values |
+|----------|------|---------|-------------|-----------------|
+| `author` | string | "Unknown" | The author of the template | Any string |
+| `version` | string | "1.0.0" | Version of the template | Any version string |
+| `tags` | array | [] | Tags for categorizing and filtering templates | See Built-in Tags section |
+| `category` | string | "General" | Category for template organization | Any string |
+| `projectType` | string | "CSharp" | **Main project type identifier** | `"CSharp"`, `"VisualBasic"`, `"Web"`, `"VC"` |
+| `languageTag` | string | "C#" | Programming language tag for filtering | See Language Tags section |
+| `platformTag` | string | "Windows" | Target platform tag for filtering | See Platform Tags section |
+| `projectTypeTag` | string | "project" | Project type categorization for filtering | See Project Type Tags section |
+| `sortOrder` | number | 1000 | Sort order in template lists | Any integer |
+| `createNewFolder` | boolean | true | Whether to create a new folder for the project | `true`, `false` |
+| `provideDefaultName` | boolean | true | Whether to provide a default project name | `true`, `false` |
+| `locationField` | string | "Enabled" | Location field behavior | `"Enabled"`, `"Disabled"`, `"Hidden"` |
+| `enableLocationBrowseButton` | boolean | true | Whether to show location browse button | `true`, `false` |
+| `createInPlace` | boolean | true | Whether to create project in place | `true`, `false` |
+| `requiredFrameworkVersion` | string | "4.0" | Minimum required framework version | Any .NET version string |
+| `maxFrameworkVersion` | string | "" | Maximum supported framework version | Any .NET version string |
+| `templateGroupIdentity` | string | "" | Template group identifier | Any unique string |
+| `supportedLanguages` | array | ["C#"] | List of supported programming languages | Array of language strings |
+
+## Valid Values Reference
+
+### ProjectType (Main Categories)
+The `projectType` field determines the main category where your template appears in Visual Studio:
+
+- **`"CSharp"`** - C# projects (appears under Visual C# node)
+- **`"VisualBasic"`** - Visual Basic projects (appears under Visual Basic node)  
+- **`"Web"`** - Web projects (language defined by ProjectSubType)
+- **`"VC"`** - Visual C++ projects
+
+### Language Tags (Built-in)
+Use these predefined language tags for proper localization:
+
+- **`"csharp"`** or **`"C#"`** - C# language
+- **`"visualbasic"`** - Visual Basic language
+- **`"cpp"`** - C++ language
+- **`"fsharp"`** - F# language
+- **`"javascript"`** - JavaScript language
+- **`"typescript"`** - TypeScript language
+- **`"python"`** - Python language
+- **`"java"`** - Java language
+- **`"querylanguage"`** - Query Language
+- **`"xaml"`** - XAML language
+
+### Platform Tags (Built-in)
+Use these predefined platform tags for proper categorization:
+
+- **`"windows"`** - Windows platform
+- **`"android"`** - Android platform
+- **`"ios"`** - iOS platform
+- **`"linux"`** - Linux platform
+- **`"macos"`** - macOS platform
+- **`"tvos"`** - tvOS platform
+- **`"xbox"`** - Xbox platform
+- **`"windowsappsdk"`** - Windows App SDK
+- **`"azure"`** - Azure platform
+
+### Project Type Tags (Built-in)
+Use these predefined project type tags for filtering:
+
+- **`"console"`** - Console applications
+- **`"desktop"`** - Desktop applications
+- **`"web"`** - Web applications
+- **`"mobile"`** - Mobile applications
+- **`"cloud"`** - Cloud applications
+- **`"service"`** - Service applications
+- **`"library"`** - Library projects
+- **`"test"`** - Test projects
+- **`"games"`** - Game projects
+- **`"iot"`** - IoT projects
+- **`"extension"`** - Extension projects
+- **`"office"`** - Office applications
+- **`"machinelearning"`** - Machine Learning projects
+- **`"uwp"`** - UWP applications
+- **`"winui"`** - WinUI applications
+- **`"other"`** - Other project types
+
+### Custom Tags
+You can also create custom tags by using any string value. However, built-in tags provide better localization and Visual Studio integration.
+
+## Understanding ProjectType vs ProjectCategory vs Tags
+
+### ProjectType (Required)
+- **Purpose**: Determines the **main language/technology category** in Visual Studio's New Project dialog
+- **Values**: `"CSharp"`, `"VisualBasic"`, `"Web"`, `"VC"` (limited set)
+- **Effect**: Places template under specific language node in project tree
+- **Example**: `"CSharp"` puts template under "Visual C#" category
+
+### ProjectCategory (Optional - Custom Property)
+- **Purpose**: Custom organizational category for grouping templates
+- **Values**: Any string (e.g., "Console", "Web API", "Desktop", "Service")
+- **Effect**: Used for internal organization, not directly visible in VS dialog
+- **Example**: `"Console"` for console application templates
+
+### Tags (languageTag, platformTag, projectTypeTag)
+- **Purpose**: **Filtering and searchability** in Visual Studio's New Project dialog
+- **Values**: Built-in predefined tags (recommended) or custom strings
+- **Effect**: Appear as filter chips and searchable metadata
+- **Example**: `"console"` tag makes template findable when user searches "console"
+
+### Best Practice Combinations
+
+**Console Application:**
+```json
+{
+  "projectType": "CSharp",
+  "category": "Console Applications",
+  "languageTag": "csharp",
+  "platformTag": "windows", 
+  "projectTypeTag": "console"
+}
+```
+
+**Web API:**
+```json
+{
+  "projectType": "CSharp",
+  "category": "Web APIs",
+  "languageTag": "csharp",
+  "platformTag": "windows",
+  "projectTypeTag": "web"
+}
+```
+
+**Windows Service:**
+```json
+{
+  "projectType": "CSharp", 
+  "category": "Services",
+  "languageTag": "csharp",
+  "platformTag": "windows",
+  "projectTypeTag": "service"
+}
+```
 
 ## Generated VSTemplate Elements
 
