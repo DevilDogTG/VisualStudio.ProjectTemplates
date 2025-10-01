@@ -8,12 +8,18 @@
 
   <ItemGroup>
     <Content Remove="logsettings.json" />
+    <Content Remove="template.config.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="logo.ico" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="logsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="template.config.json" />
   </ItemGroup>
 
   <ItemGroup>
