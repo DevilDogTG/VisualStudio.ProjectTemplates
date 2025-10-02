@@ -1,6 +1,10 @@
 param (
     [switch]$DryRun,
-    [string]$LogPath
+    [string]$LogPath,
+    [string[]]$Projects,
+    [switch]$All,
+    [switch]$ReExportOnly,
+    [switch]$BumpVersion
 )
 
 # ------------------------ LOGGING ------------------------
@@ -15,6 +19,12 @@ function Log {
 
 # Enable error handling
 $ErrorActionPreference = "Stop"
+
+# Validate incompatible options
+if ($ReExportOnly -and $BumpVersion) {
+    Write-Host "❌ ERROR: -ReExportOnly and -BumpVersion cannot be used together." -ForegroundColor Red
+    exit 1
+}
 
 # Set root path is 1 level up from the script path
 $RootPath = (Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent)
@@ -106,6 +116,32 @@ if (-not $projectFolders) {
     exit 1
 }
 
+# Selection logic: default is all. If -Projects provided, filter to those.
+if ($All -and $Projects) {
+    Log "ℹ️ Both -All and -Projects specified; proceeding with -Projects selection."
+}
+if ($Projects -and $Projects.Count -gt 0) {
+    $requested = @()
+    foreach ($name in $Projects) {
+        $match = $projectFolders | Where-Object { $_.Name -ieq $name }
+        if (-not $match) {
+            # try partial contains match
+            $match = $projectFolders | Where-Object { $_.Name -ilike "*${name}*" }
+        }
+        if ($match) { $requested += $match } else { Log "⚠ Requested project not found: $name" }
+    }
+    if ($requested.Count -eq 0) {
+        Log "❌ ERROR: None of the requested projects were found under: $srcPath"
+        exit 1
+    }
+    $projectFolders = $requested | Sort-Object -Property Name -Unique
+}
+
+Log ("📦 Export selection: {0}" -f (($projectFolders | Select-Object -ExpandProperty Name) -join ", "))
+if ($ReExportOnly) { Log "🔁 Mode: Re-export only (no version bump, ignore change detection)" }
+elseif ($BumpVersion) { Log "⬆️ Mode: Force version bump (patch) and export" }
+else { Log "🧮 Mode: Content-aware export (auto bump on changes)" }
+
 $tempWorkRoot = Join-Path $env:TEMP ('VSExport_' + [guid]::NewGuid())
 
 foreach ($project in $projectFolders) {
@@ -166,33 +202,53 @@ foreach ($project in $projectFolders) {
     $version = $config.version
     $projectPath = $originalProjectPath
     $skipExport = $false
-    $autoBumpVersion = $false
     $newVersion = $version
     $zipName = "{0}-v{1}.zip" -f $project.Name, $version
     $zipPath = Join-Path $outputPath $zipName
-    Log "🔢 Previous Hash: $previousHash"
-    Log "🔢 Current Hash: $currentHash"
-    if ($previousHash -and $previousHash -eq $currentHash) {
-        Log "⏩ Skipping export for '$($project.Name)' (content unchanged, hash matched)"
-        $skipExport = $true
-    } else {
-        # Auto-increment patch version if content changed
-        $autoBumpVersion = $true
+
+    if ($ReExportOnly) {
+        Log "⏭ Ignoring content hash and version bump due to -ReExportOnly"
+    }
+    elseif ($BumpVersion) {
         $verParts = $version -split '\.'
         if ($verParts.Length -eq 3) {
             $verParts[2] = [int]$verParts[2] + 1
-            $newVersion = "$($verParts[0]).$($verParts[1]).$($verParts[2])"
+            $newVersion = "${($verParts[0])}.${($verParts[1])}.${($verParts[2])}"
         } else {
             $newVersion = "$version.1"
         }
-        Log "🔄 Content changed, auto-incrementing patch version: $version → $newVersion"
-        # Update template.config.json
+        Log "🔄 Forcing version bump: $version → $newVersion"
         $config.version = $newVersion
         $config | ConvertTo-Json -Depth 10 | Set-Content $configPath -Encoding UTF8
         # Reload config and update version/zip variables
         $version = $newVersion
         $zipName = "{0}-v{1}.zip" -f $project.Name, $version
         $zipPath = Join-Path $outputPath $zipName
+    }
+    else {
+        Log "🔢 Previous Hash: $previousHash"
+        Log "🔢 Current Hash: $currentHash"
+        if ($previousHash -and $previousHash -eq $currentHash) {
+            Log "⏩ Skipping export for '$($project.Name)' (content unchanged, hash matched)"
+            $skipExport = $true
+        } else {
+            # Auto-increment patch version if content changed
+            $verParts = $version -split '\.'
+            if ($verParts.Length -eq 3) {
+                $verParts[2] = [int]$verParts[2] + 1
+                $newVersion = "${($verParts[0])}.${($verParts[1])}.${($verParts[2])}"
+            } else {
+                $newVersion = "$version.1"
+            }
+            Log "🔄 Content changed, auto-incrementing patch version: $version → $newVersion"
+            # Update template.config.json
+            $config.version = $newVersion
+            $config | ConvertTo-Json -Depth 10 | Set-Content $configPath -Encoding UTF8
+            # Reload config and update version/zip variables
+            $version = $newVersion
+            $zipName = "{0}-v{1}.zip" -f $project.Name, $version
+            $zipPath = Join-Path $outputPath $zipName
+        }
     }
     if ($skipExport) { continue }
 
@@ -222,6 +278,7 @@ foreach ($project in $projectFolders) {
         $category = if ($config.category) { $config.category } else { "General" }
         $projectType = if ($config.projectType) { $config.projectType } else { "CSharp" }
         $languageTag = if ($config.languageTag) { $config.languageTag } else { "C#" }
+        $platformTag = if ($config.platformTag) { $config.platformTag } else { "" }
         $projectTypeTag = if ($config.projectTypeTag) { $config.projectTypeTag } else { "project" }
         $sortOrder = if ($config.sortOrder) { $config.sortOrder } else { 1000 }
         $createNewFolder = if ($config.createNewFolder -ne $null) { $config.createNewFolder.ToString().ToLower() } else { "true" }
