@@ -4,8 +4,11 @@ param (
     [string]$LogPath
 )
 
+# Enable error handling
 $ErrorActionPreference = "Stop"
-$RootPath = (Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent)
+
+# Set root path is 1 level up from the script path
+$RootPath = (Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent | Split-Path -Parent)
 $SourcePath = Join-Path $RootPath "output"
 
 # ------------------------ LOGGING ------------------------
@@ -17,12 +20,6 @@ function Log {
         Add-Content -Path $LogPath -Value ("[{0}] {1}" -f $timestamp, $msg)
     }
 }
-
-# Enable error handling
-$ErrorActionPreference = "Stop"
-
-# Set root path is 1 level up from the script path
-$RootPath = (Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent)
 
 # Initialize LogPath if not provided
 if (-not $LogPath) {
