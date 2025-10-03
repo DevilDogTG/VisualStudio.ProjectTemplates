@@ -363,6 +363,5 @@ FodyWeavers.xsd
 
 **/logs/*
 !**/logs/placeholder.log
-**/output/*
 **/appsettings.*.json
 **/logsettings.*.json
