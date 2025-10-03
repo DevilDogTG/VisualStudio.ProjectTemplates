@@ -21,6 +21,16 @@ function Log {
     }
 }
 
+function Resolve-CanonicalPath {
+    param([string]$Path)
+    if (-not $Path) { return $null }
+    try {
+        return (Get-Item -LiteralPath $Path).FullName
+    } catch {
+        return [System.IO.Path]::GetFullPath($Path)
+    }
+}
+
 # Initialize LogPath if not provided
 if (-not $LogPath) {
     $LogPath = Join-Path $RootPath ("logs\importing-" + (Get-Date -Format "yyyyMMdd-HHmmss") + ".log")
@@ -93,13 +103,14 @@ function Get-VSProjectTemplatePath {
     return $defaultPath
 }
 
-$vsTemplateBase = Get-VSProjectTemplatePath
+$vsTemplateBase = Resolve-CanonicalPath (Get-VSProjectTemplatePath)
 Log "📂 Visual Studio Project Templates Path: $vsTemplateBase"
 $vsTemplateTarget = Join-Path $vsTemplateBase $TargetFolderName
 
 if (-not $DryRun -and -not (Test-Path $vsTemplateTarget)) {
     New-Item -ItemType Directory -Path $vsTemplateTarget -Force | Out-Null
 }
+$vsTemplateTarget = Resolve-CanonicalPath $vsTemplateTarget
 
 $templateZips = Get-ChildItem -Path $SourcePath -Filter *.zip
 
@@ -126,18 +137,38 @@ foreach ($zip in $templateZips) {
     }
 
     $destPath = Join-Path $vsTemplateTarget $zip.Name
+    $destExists = Test-Path $destPath
+    $shouldCopy = $true
+    $action = if ($destExists) { 'update' } else { 'import' }
+    $actionPastTense = if ($destExists) { 'Updated' } else { 'Imported' }
 
-    if (Test-Path $destPath) {
-        Log "⏩ Skipping import (already up-to-date): $($zip.Name)"
-        continue
+    if ($destExists) {
+        if ($DryRun) {
+            Log "?? Would compare hash and update existing template: $($zip.Name)"
+        } else {
+            try {
+                $sourceHash = (Get-FileHash -Path $zip.FullName -Algorithm SHA256).Hash
+                $destHash = (Get-FileHash -Path $destPath -Algorithm SHA256).Hash
+                if ($sourceHash -eq $destHash) {
+                    Log "? Skipping import (hash match): $($zip.Name)"
+                    $shouldCopy = $false
+                } else {
+                    Log "?? Updating existing template (content changed): $($zip.Name)"
+                }
+            } catch {
+                Log "? Warning: Failed to compare existing template hash for $($zip.Name): $_"
+            }
+        }
     }
 
-    if ($DryRun) {
-        Log "☑️ Would copy: $($zip.FullName) -> $destPath"
-    } else {
-        Copy-Item -Path $zip.FullName -Destination $destPath -Force
-        Log "✅ Imported: $($zip.Name) -> $TargetFolderName"
-        $importedAny = $true
+    if ($shouldCopy) {
+        if ($DryRun) {
+            Log ("?? Would {0}: {1} -> {2}" -f $action, $zip.FullName, $destPath)
+        } else {
+            Copy-Item -Path $zip.FullName -Destination $destPath -Force
+            Log ("? {0}: {1} -> {2}" -f $actionPastTense, $zip.Name, $TargetFolderName)
+            $importedAny = $true
+        }
     }
 }
 

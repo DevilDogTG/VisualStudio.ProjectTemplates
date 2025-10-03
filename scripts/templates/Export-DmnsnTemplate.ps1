@@ -102,6 +102,41 @@ function Generate-ProjectXml {
 
     return $content
 }
+
+function Resolve-CanonicalPath {
+    param([string]$Path)
+    if (-not $Path) { return $null }
+    try {
+        return (Get-Item -LiteralPath $Path).FullName
+    } catch {
+        return [System.IO.Path]::GetFullPath($Path)
+    }
+}
+
+function Add-TrailingSeparator {
+    param([string]$Path)
+    if (-not $Path) { return $Path }
+    $lastChar = $Path[-1]
+    if ($lastChar -eq [System.IO.Path]::DirectorySeparatorChar -or $lastChar -eq [System.IO.Path]::AltDirectorySeparatorChar) {
+        return $Path
+    }
+    return $Path + [System.IO.Path]::DirectorySeparatorChar
+}
+
+function Get-RelativePathSafe {
+    param(
+        [string]$BasePath,
+        [string]$TargetPath
+    )
+    if (-not $BasePath) { return $TargetPath }
+    $targetFull = Resolve-CanonicalPath $TargetPath
+    if (-not $targetFull) { return $TargetPath }
+    $baseUri = [Uri]::new((Add-TrailingSeparator $BasePath))
+    $targetUri = [Uri]::new($targetFull)
+    $relative = [Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString())
+    return $relative.Replace('/', [System.IO.Path]::DirectorySeparatorChar)
+}
+
 # ------------------------ TEMPLATE PROCESS ------------------------
 $projectFolders = Get-ChildItem $srcPath -Directory -ErrorAction SilentlyContinue
 if (-not $projectFolders) {
@@ -135,9 +170,10 @@ if ($ReExportOnly) { Log "🔁 Mode: Re-export only (no version bump, ignore cha
 else { Log "🧮 Mode: Content-aware export (auto bump on changes)" }
 
 $tempWorkRoot = Join-Path $env:TEMP ('VSExport_' + [guid]::NewGuid())
+$tempWorkRoot = (New-Item -ItemType Directory -Path $tempWorkRoot -Force).FullName
 
 foreach ($project in $projectFolders) {
-    $originalProjectPath = $project.FullName
+    $originalProjectPath = Resolve-CanonicalPath $project.FullName
     $configPath = Join-Path $originalProjectPath "template.config.json"
     $hashFilePath = Join-Path $originalProjectPath ".template.hash"
 
@@ -151,7 +187,7 @@ foreach ($project in $projectFolders) {
     $excludedFiles = @(".zip", ".vstemplate", ".user", ".suo", ".gitignore", ".gitattributes")
     $excludedNames = @("template.config.json", ".template.hash")
     $filesToHash = Get-ChildItem -Path $originalProjectPath -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
-        $relativePath = $_.FullName.Substring($originalProjectPath.Length + 1)
+        $relativePath = Get-RelativePathSafe $originalProjectPath $_.FullName
         $pathParts = $relativePath -split '[\\/]'
         $isInExcludedDir = ($pathParts | Where-Object { $excludedDirs -contains $_ }).Count -gt 0
         $isExcludedExt = $excludedFiles -contains $_.Extension.ToLower()
@@ -174,7 +210,7 @@ foreach ($project in $projectFolders) {
                     [System.Text.Encoding]::UTF8.GetBytes($normalizedContent)
                 )
             ).Replace("-", "").ToLower()
-            $rel = $file.FullName.Substring($originalProjectPath.Length + 1).ToLower().Replace("\", "/")
+            $rel = (Get-RelativePathSafe $originalProjectPath $file.FullName).Replace("\", "/").ToLower()
             $hashes += "${rel}:${hash}"
         }
         $combined = $hashes -join "`n"
@@ -232,8 +268,12 @@ foreach ($project in $projectFolders) {
     try {
         New-Item -ItemType Directory -Path $tempWorkRoot -Force | Out-Null
         $tempProjectPath = Join-Path $tempWorkRoot $project.Name
-        Copy-Item -Path $originalProjectPath -Destination $tempProjectPath -Recurse -Force
-        $projectPath = $tempProjectPath
+        if (Test-Path $tempProjectPath) {
+            Remove-Item -Path $tempProjectPath -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        New-Item -ItemType Directory -Path $tempProjectPath -Force | Out-Null
+        Copy-Item -Path (Join-Path $originalProjectPath '*') -Destination $tempProjectPath -Recurse -Force
+        $projectPath = Resolve-CanonicalPath $tempProjectPath
         $vstemplatePath = Join-Path $projectPath "MyTemplate.vstemplate"
     }
     catch {
@@ -304,7 +344,7 @@ foreach ($project in $projectFolders) {
     $excludedNames = @("template.config.json", ".template.hash")
 
     $filesToInclude = Get-ChildItem -Path $projectPath -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
-        $relativePath = $_.FullName.Substring($projectPath.Length + 1)
+        $relativePath = Get-RelativePathSafe $projectPath $_.FullName
         $pathParts = $relativePath -split '[\\/]'
         $isInExcludedDir = ($pathParts | Where-Object { $excludedDirs -contains $_ }).Count -gt 0
         $isExcludedExt = $excludedFiles -contains $_.Extension.ToLower()
@@ -316,7 +356,7 @@ foreach ($project in $projectFolders) {
     $filesToInclude | Where-Object {
         $_.Extension -in @(".cs", ".csproj", ".json")
     } | ForEach-Object {
-        $rel = $_.FullName.Substring($projectPath.Length + 1) -replace '\\', '/'
+        $rel = (Get-RelativePathSafe $projectPath $_.FullName) -replace "\\", "/"
         Log "Replacing namespace in: ./$rel"
         if (-not $DryRun) {
             try {
@@ -335,7 +375,7 @@ foreach ($project in $projectFolders) {
         -not ($filesToInclude.FullName -contains $_.FullName)
     }
     $actualExcludedFiles | ForEach-Object {
-        $rel = $_.FullName.Substring($projectPath.Length + 1) -replace '\\', '/'
+        $rel = (Get-RelativePathSafe $projectPath $_.FullName) -replace "\\", "/"
         Log "🚫 Excluded: ./$rel"
     }
 
@@ -454,7 +494,7 @@ foreach ($project in $projectFolders) {
             New-Item -ItemType Directory -Path $tempZipDir | Out-Null
 
             foreach ($file in $filesToInclude) {
-                $relative = $file.FullName.Substring($projectPath.Length + 1)
+                $relative = Get-RelativePathSafe $projectPath $file.FullName
                 $dest = Join-Path $tempZipDir $relative
                 $destDir = Split-Path $dest -Parent
                 if (-not (Test-Path $destDir)) {
@@ -506,3 +546,5 @@ if (Test-Path $tempWorkRoot) {
     Remove-Item -Path $tempWorkRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
 Log "🎯 All templates saved in: $outputPath"
+
+
