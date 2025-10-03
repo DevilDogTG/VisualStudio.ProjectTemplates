@@ -43,7 +43,7 @@ All templates target **.NET 8.0** and embrace a database-first pattern backed by
 	 Replace `Visual Studio 2022` with your installed version path if different.
 3. Launch Visual Studio and create a new project using the DMNSN templates.
 
-For project-specific coding conventions, see `src/DMNSN.Templates.Project.ConsoleApp/README.md`.
+For project-specific coding conventions, see `src/DMNSN.Templates.Projects.ConsoleApp/README.md`.
 
 ## Template configuration
 
@@ -67,7 +67,7 @@ Each template folder contains a `template.config.json` file. The export script r
 {
 	"name": "DMNSN Console Application",
 	"description": "A modern console application template with logging, dependency injection, and configuration support",
-	"defaultNamespace": "DMNSN.Templates.Project.ConsoleApp",
+	"defaultNamespace": "DMNSN.Templates.Projects.ConsoleApp",
 	"author": "DMNSN",
 	"version": "8.0.17",
 	"tags": ["console", "application", "logging", "dependency-injection", "configuration"],
@@ -205,7 +205,7 @@ Each template folder contains a `template.config.json` file. The export script r
 		<ProjectType>CSharp</ProjectType>
 		<SortOrder>1000</SortOrder>
 		<CreateNewFolder>true</CreateNewFolder>
-		<DefaultName>DMNSN.Templates.Project.ConsoleApp</DefaultName>
+		<DefaultName>DMNSN.Templates.Projects.ConsoleApp</DefaultName>
 		<ProvideDefaultName>true</ProvideDefaultName>
 		<LocationField>Enabled</LocationField>
 		<EnableLocationBrowseButton>true</EnableLocationBrowseButton>
@@ -234,7 +234,7 @@ Each template folder contains a `template.config.json` file. The export script r
 Running the export script provides clear feedback about each template:
 
 ```
-⚙ Processing 'DMNSN.Templates.Project.ConsoleApp'...
+⚙ Processing 'DMNSN.Templates.Projects.ConsoleApp'...
 📋 Template Name: DMNSN Console Application
 👤 Author: DMNSN
 🔢 Version: 8.0.17
@@ -246,6 +246,6 @@ Running the export script provides clear feedback about each template:
 ## Feedback and support
 
 - File issues or feature requests in [Discussions](https://github.com/DevilDogTG/visualstudio-projects-template/discussions).
-- Explore the sample code style in `src/DMNSN.Templates.Project.ConsoleApp`.
+- Explore the sample code style in `src/DMNSN.Templates.Projects.ConsoleApp`.
 - Contributions and suggestions are welcome—help shape the next iteration of these templates.
 

@@ -1,0 +1,49 @@
+using DMNSN.Templates.Projects.ConsoleApp.Interfaces.Services;
+using DMNSN.Templates.Projects.ConsoleApp.Settings;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+
+namespace DMNSN.Templates.Projects.ConsoleApp.Services;
+
+/// <summary>
+/// Represents the application service responsible for running the main application logic.
+/// </summary>
+/// <param name="logger">The logger instance used for logging application events.</param>
+/// <param name="config">The configuration monitor for accessing and tracking changes to application settings.</param>
+public class AppService(
+    ILogger<AppService> _logger,
+    IOptionsMonitor<AppSettings> _config) : IAppService, IDisposable
+{
+    private readonly ILogger<AppService> logger = _logger;
+    private readonly IOptionsMonitor<AppSettings> config = _config;
+
+    private readonly IDisposable? changeSubscription = _config.OnChange(
+        (settings, name) =>
+        {
+            _logger.LogInformation("Configuration changed: {AppName}", settings.ApplicationName);
+        });
+
+    public int Run(AppArgs args)
+    {
+        var currentSettings = config.CurrentValue;
+        logger.LogInformation("Running {Name}", nameof(AppService));
+        logger.LogInformation("Application Name: {AppName}", currentSettings.ApplicationName);
+        logger.LogInformation("Args: {Args}", JsonConvert.SerializeObject(args));
+        return 0;
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            changeSubscription?.Dispose();
+        }
+    }
+}
