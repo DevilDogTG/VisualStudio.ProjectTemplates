@@ -3,34 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Console", "Console", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMNSN.Templates.Projects.ConsoleApp", "src\DMNSN.Templates.Projects.ConsoleApp\DMNSN.Templates.Projects.ConsoleApp.csproj", "{0E39F8BE-04C0-4CC7-BB42-E2B535FC7CEA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMNSN.Templates.Project.ConsoleApp", "src\DMNSN.Templates.Project.ConsoleApp\DMNSN.Templates.Project.ConsoleApp.csproj", "{0E39F8BE-04C0-4CC7-BB42-E2B535FC7CEA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMNSN.Templates.Projects.WorkerApp", "src\DMNSN.Templates.Projects.WorkerApp\DMNSN.Templates.Projects.WorkerApp.csproj", "{50B066C4-E4D3-4328-BAB8-54529BE994C8}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Assets", "Assets", "{449C5361-543C-4F93-B656-8883CD885915}"
-	ProjectSection(SolutionItems) = preProject
-		.gitignore = .gitignore
-		LICENSE = LICENSE
-		logo.png = logo.png
-		README.md = README.md
-		TEMPLATE_CONFIG_GUIDE.md = TEMPLATE_CONFIG_GUIDE.md
-	EndProjectSection
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMNSN.Templates.Projects.WebApiRest", "src\DMNSN.Templates.Projects.WebApiRest\DMNSN.Templates.Projects.WebApiRest.csproj", "{3AEE194B-2671-42F2-B03D-E7417F92164A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{7ADA4614-E6A3-4CCB-A689-AC4F30608833}"
-	ProjectSection(SolutionItems) = preProject
-		scripts\Export-DmnsnTemplate.ps1 = scripts\Export-DmnsnTemplate.ps1
-		scripts\Import-DmnsnTemplate.ps1 = scripts\Import-DmnsnTemplate.ps1
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Templates", "Templates", "{A8E21B90-F049-4270-912F-BC5C1AC937AE}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Worker", "Worker", "{1A78F66F-478E-4C94-AC89-13B157D20C3B}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMNSN.Templates.Project.WorkerApp", "src\DMNSN.Templates.Project.WorkerApp\DMNSN.Templates.Project.WorkerApp.csproj", "{50B066C4-E4D3-4328-BAB8-54529BE994C8}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{3FBF6FB3-B9A7-4208-A5C6-D852C407EB99}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMNSN.Templates.Project.WebApiRest", "src\DMNSN.Templates.Project.WebApiRest\DMNSN.Templates.Project.WebApiRest.csproj", "{3AEE194B-2671-42F2-B03D-E7417F92164A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMNSN.Templates.Projects.Library", "src\DMNSN.Templates.Projects.Library\DMNSN.Templates.Projects.Library.csproj", "{F77858AA-D7B8-43D9-8AFF-5FF371918232}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,17 +29,13 @@ Global
 		{3AEE194B-2671-42F2-B03D-E7417F92164A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3AEE194B-2671-42F2-B03D-E7417F92164A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3AEE194B-2671-42F2-B03D-E7417F92164A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F77858AA-D7B8-43D9-8AFF-5FF371918232}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F77858AA-D7B8-43D9-8AFF-5FF371918232}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F77858AA-D7B8-43D9-8AFF-5FF371918232}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F77858AA-D7B8-43D9-8AFF-5FF371918232}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {A8E21B90-F049-4270-912F-BC5C1AC937AE}
-		{0E39F8BE-04C0-4CC7-BB42-E2B535FC7CEA} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{1A78F66F-478E-4C94-AC89-13B157D20C3B} = {A8E21B90-F049-4270-912F-BC5C1AC937AE}
-		{50B066C4-E4D3-4328-BAB8-54529BE994C8} = {1A78F66F-478E-4C94-AC89-13B157D20C3B}
-		{3FBF6FB3-B9A7-4208-A5C6-D852C407EB99} = {A8E21B90-F049-4270-912F-BC5C1AC937AE}
-		{3AEE194B-2671-42F2-B03D-E7417F92164A} = {3FBF6FB3-B9A7-4208-A5C6-D852C407EB99}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A670202C-0AF4-4407-99B4-173B53CA9271}

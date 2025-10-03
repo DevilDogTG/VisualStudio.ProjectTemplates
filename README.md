@@ -2,56 +2,117 @@
 
 Modern .NET project templates featuring Serilog logging, dependency injection, configuration, and opinionated defaults for jump-starting production-ready solutions.
 
-> Maintained individually—responses to questions and issues may take time, but feedback is always welcome in the [Discussions](https://github.com/DevilDogTG/visualstudio-projects-template/discussions) tab.
+> Maintained individually—responses to questions and issues may take time, but feedback is always welcome in the [Discussions](https://github.com/DevilDogTG/VisualStudio.ProjectTemplates/discussions) tab.
 
 ## Included templates
 
-- **DMNSN Console Application** – Top-level program with structured logging, configuration, and DI support.
-- **DMNSN Web API** – Minimal API bootstrap with Serilog enrichment and database-first EF Core wiring.
-- **DMNSN Worker Service** – Background service/Windows Service scaffold with health checks and logging.
+- DMNSN Console Application – Top-level program with structured logging, configuration, and DI support.
+- DMNSN Web API – Minimal API bootstrap with Serilog enrichment and database-first EF Core wiring.
+- DMNSN Worker Service – Background service/Windows Service scaffold with health checks and logging.
+- DMNSN Class Library – Opinionated .NET class library with nullable enabled and packaging metadata.
 
-All templates target **.NET 8.0** and embrace a database-first pattern backed by SQL Server.
+All templates target .NET 8.0 and embrace a database-first pattern backed by SQL Server where applicable.
 
 ## Key features
 
 - Serilog-based logging pipeline with sensible enrichers.
 - Built-in dependency injection and configuration binding patterns.
-- Database-first Entity Framework Core setup with bulk extension support.
+- Database-first Entity Framework Core setup with bulk extension support (for Web API/Worker).
 - Consistent code style and project structure across all templates.
 - Automated export tooling that keeps metadata and packaging in sync.
 
 ## Dependencies
 
-- [Serilog](https://serilog.net/)
-	- [Serilog.Enrichers.AspNetCore.RequestHeader](https://github.com/DevilDogTG/serilog-enrichers-aspnetcore)
-	- [Serilog.Enrichers.Environment](https://github.com/serilog/serilog-enrichers-environment)
-- [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/)
-- [EFCore.BulkExtensions](https://github.com/borisdj/EFCore.BulkExtensions)
-- [Newtonsoft.Json](https://www.newtonsoft.com/json)
+- Serilog
+	- Serilog.Enrichers.AspNetCore.RequestHeader
+	- Serilog.Enrichers.Environment
+- Entity Framework Core
+- EFCore.BulkExtensions
+- Newtonsoft.Json
 
 ## Quick start
 
 1. Export the templates to `./output`:
-	 ```powershell
-	 ./scripts/Export-DmnsnTemplate.ps1
-	 ```
-	 - Use `-DryRun` to preview changes or `-LogPath` to specify a custom log file.
+	```powershell
+	.\scripts\templates\Export-DmnsnTemplate.ps1
+	```
+	- Use `-DryRun` to preview changes or `-LogPath` to specify a custom log file.
 2. Install the generated ZIP(s) into Visual Studio:
-	 ```powershell
-	 Copy-Item -Path .\output\* -Destination "$env:USERPROFILE\Documents\Visual Studio 2022\Templates\ProjectTemplates" -Recurse -Force
-	 ```
-	 Replace `Visual Studio 2022` with your installed version path if different.
+	```powershell
+	Copy-Item -Path .\output\* -Destination "$env:USERPROFILE\Documents\Visual Studio 2022\Templates\ProjectTemplates" -Recurse -Force
+	```
+	Replace `Visual Studio 2022` with your installed version path if different.
 3. Launch Visual Studio and create a new project using the DMNSN templates.
 
-For project-specific coding conventions, see `src/DMNSN.Templates.Project.ConsoleApp/README.md`.
+For project-specific coding conventions, see the `README.md` in each `src/DMNSN.Templates.Projects.*` folder.
+
+## Export script usage (parameters and examples)
+
+The export script lives at `scripts/templates/Export-DmnsnTemplate.ps1`. Examples below demonstrate each parameter.
+
+- Dry-run preview (no files changed, no ZIPs written, hash not updated):
+
+  ```powershell
+  .\scripts\templates\Export-DmnsnTemplate.ps1 -DryRun
+  ```
+
+- Custom log path (folder/file created if missing):
+
+  ```powershell
+  .\scripts\templates\Export-DmnsnTemplate.ps1 -LogPath .\logs\exporting-custom.log
+  ```
+
+- Export specific projects only (case-insensitive; partial names allowed):
+
+  ```powershell
+  # Multiple names inline
+  .\scripts\templates\Export-DmnsnTemplate.ps1 -Projects "DMNSN.Templates.Projects.ConsoleApp","WebApiRest"
+
+  # Or using an array
+  $projects = @("ConsoleApp","Library")
+  .\scripts\templates\Export-DmnsnTemplate.ps1 -Projects $projects
+  ```
+
+- Export all projects explicitly (default behavior when no `-Projects` are passed):
+
+  ```powershell
+  .\scripts\templates\Export-DmnsnTemplate.ps1 -All
+  ```
+
+  Note: If you pass both `-All` and `-Projects`, the script proceeds with the `-Projects` selection.
+
+- Re-export without change detection or version bump (repackage using the current version):
+
+  ```powershell
+  .\scripts\templates\Export-DmnsnTemplate.ps1 -Projects "Library" -ReExportOnly
+  ```
+
+- Combine options (e.g., preview a filtered run or re-export multiple):
+
+  ```powershell
+  # Preview two projects without making changes
+  .\scripts\templates\Export-DmnsnTemplate.ps1 -Projects "ConsoleApp","WebApiRest" -DryRun
+
+  # Re-export two projects using their current versions
+  .\scripts\templates\Export-DmnsnTemplate.ps1 -Projects "ConsoleApp","Library" -ReExportOnly
+  ```
+
+Notes:
+- Output ZIPs are saved to `output`. Older ZIPs for a project are removed during export, keeping only the current version.
+- A `.template.hash` file is written in each original project folder to track content changes (skipped during `-DryRun`).
+- If `logo.ico` or `preview.png` exist at the repository root, they are bundled as `__TemplateIcon.ico` and `__TemplatePreview.png`.
 
 ## Template configuration
 
-Each template folder contains a `template.config.json` file. The export script reads this metadata and generates a rich `.vstemplate` manifest automatically.
+Each template folder contains a `template.config.json` file. The export script reads this metadata and generates a rich `.vstemplate` manifest automatically.# 
+
+Use this file as a quick pointer when browsing the repository structure:
+
+1. Update the `template.config.json` of the template you want to export.
+2. Consult the README for property descriptions, tag recommendations, and sample manifests.
+3. Run `./scripts/templates/Export-DmnsnTemplate.ps1` to regenerate the `.vstemplate` and ZIP package.
 
 ### Quick reference
-
-**Basic configuration**
 
 ```json
 {
@@ -61,15 +122,15 @@ Each template folder contains a `template.config.json` file. The export script r
 }
 ```
 
-**Enhanced configuration**
+### Enhanced configuration
 
 ```json
 {
 	"name": "DMNSN Console Application",
 	"description": "A modern console application template with logging, dependency injection, and configuration support",
-	"defaultNamespace": "DMNSN.Templates.Project.ConsoleApp",
+	"defaultNamespace": "DMNSN.Templates.Projects.ConsoleApp",
 	"author": "DMNSN",
-	"version": "8.0.17",
+	"version": "8.0.1",
 	"tags": ["console", "application", "logging", "dependency-injection", "configuration"],
 	"category": "Console Applications",
 	"projectType": "CSharp",
@@ -102,13 +163,13 @@ Each template folder contains a `template.config.json` file. The export script r
 | Property | Type | Default | Description | Examples |
 |----------|------|---------|-------------|----------|
 | `author` | string | "Unknown" | Template author name | `"DMNSN"` |
-| `version` | string | "1.0.0" | Semantic version used for packaging | `"8.0.17"` |
+| `version` | string | "1.0.0" | Semantic version used for packaging | `"8.0.1"` |
 | `tags` | array | `[]` | Comma-separated metadata tags | `"console"`, `"logging"` |
 | `category` | string | "General" | Custom grouping label | `"Console Applications"` |
 | `projectType` | string | "CSharp" | Visual Studio root category | `"CSharp"`, `"Web"` |
 | `languageTag` | string | "C#" | Language filter chip | `"csharp"` |
 | `platformTag` | string | "Windows" | Platform filter chip | `"windows"`, `"azure"` |
-| `projectTypeTag` | string | "project" | Template type filter | `"console"`, `"service"` |
+| `projectTypeTag` | string | "project" | Template type filter | `"console"`, `"service"`, `"library"` |
 | `sortOrder` | number | `1000` | Ordering inside category | `900` |
 | `createNewFolder` | boolean | `true` | Creates a new folder when instantiating | `true`/`false` |
 | `provideDefaultName` | boolean | `true` | Supplies a default project name | `true`/`false` |
@@ -122,21 +183,21 @@ Each template folder contains a `template.config.json` file. The export script r
 
 ### Built-in tag references
 
-**Project type (`projectType`)**
+Project type (`projectType`)
 
-- `"CSharp"`, `"VisualBasic"`, `"Web"`, `"VC"`
+- "CSharp", "VisualBasic", "Web", "VC"
 
-**Language tags (`languageTag`)**
+Language tags (`languageTag`)
 
-- `"csharp"`, `"visualbasic"`, `"cpp"`, `"fsharp"`, `"javascript"`, `"typescript"`, `"python"`, `"java"`, `"querylanguage"`, `"xaml"`
+- "csharp", "visualbasic", "cpp", "fsharp", "javascript", "typescript", "python", "java", "querylanguage", "xaml"
 
-**Platform tags (`platformTag`)**
+Platform tags (`platformTag`)
 
-- `"windows"`, `"android"`, `"ios"`, `"linux"`, `"macos"`, `"tvos"`, `"xbox"`, `"windowsappsdk"`, `"azure"`
+- "windows", "android", "ios", "linux", "macos", "tvos", "xbox", "windowsappsdk", "azure"
 
-**Project type tags (`projectTypeTag`)**
+Project type tags (`projectTypeTag`)
 
-- `"console"`, `"desktop"`, `"web"`, `"mobile"`, `"cloud"`, `"service"`, `"library"`, `"test"`, `"games"`, `"iot"`, `"extension"`, `"office"`, `"machinelearning"`, `"uwp"`, `"winui"`, `"other"`
+- "console", "desktop", "web", "mobile", "cloud", "service", "library", "test", "games", "iot", "extension", "office", "machinelearning", "uwp", "winui", "other"
 
 ### Recommended combinations
 
@@ -166,6 +227,15 @@ Each template folder contains a `template.config.json` file. The export script r
 	"languageTag": "csharp",
 	"platformTag": "windows",
 	"projectTypeTag": "service"
+}
+
+// Class Library
+{
+	"projectType": "CSharp",
+	"category": "Class Libraries",
+	"languageTag": "csharp",
+	"platformTag": "any",
+	"projectTypeTag": "classlib"
 }
 ```
 
@@ -205,7 +275,7 @@ Each template folder contains a `template.config.json` file. The export script r
 		<ProjectType>CSharp</ProjectType>
 		<SortOrder>1000</SortOrder>
 		<CreateNewFolder>true</CreateNewFolder>
-		<DefaultName>DMNSN.Templates.Project.ConsoleApp</DefaultName>
+		<DefaultName>DMNSN.Templates.Projects.ConsoleApp</DefaultName>
 		<ProvideDefaultName>true</ProvideDefaultName>
 		<LocationField>Enabled</LocationField>
 		<EnableLocationBrowseButton>true</EnableLocationBrowseButton>
@@ -234,10 +304,10 @@ Each template folder contains a `template.config.json` file. The export script r
 Running the export script provides clear feedback about each template:
 
 ```
-⚙ Processing 'DMNSN.Templates.Project.ConsoleApp'...
+⚙ Processing 'DMNSN.Templates.Projects.ConsoleApp'...
 📋 Template Name: DMNSN Console Application
 👤 Author: DMNSN
-🔢 Version: 8.0.17
+🔢 Version: 8.0.1
 🏷️ Tags: console,application,logging,dependency-injection,configuration
 📂 Category: Console Applications
 🎯 Project Type: CSharp
@@ -245,7 +315,7 @@ Running the export script provides clear feedback about each template:
 
 ## Feedback and support
 
-- File issues or feature requests in [Discussions](https://github.com/DevilDogTG/visualstudio-projects-template/discussions).
-- Explore the sample code style in `src/DMNSN.Templates.Project.ConsoleApp`.
+- File issues or feature requests in Discussions.
+- Explore the sample code style in `src/DMNSN.Templates.Projects.ConsoleApp` and `src/DMNSN.Templates.Projects.Library`.
 - Contributions and suggestions are welcome—help shape the next iteration of these templates.
 

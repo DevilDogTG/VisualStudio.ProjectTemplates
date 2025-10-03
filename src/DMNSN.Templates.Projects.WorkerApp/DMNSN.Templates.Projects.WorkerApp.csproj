@@ -1,0 +1,65 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Version>8.0.0</Version>
+		<Copyright>Copyright 2025 @ DevDogs</Copyright>
+		<ApplicationIcon>logo.ico</ApplicationIcon>
+		<Authors>DevilDogTG</Authors>
+		<Company>DevDogs</Company>
+		<Description>Worker process project template</Description>
+		<Copyright>Copyright (c) 2025 DevDogs</Copyright>
+		<PackageIcon>logo.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageProjectUrl>https://github.com/DevilDogTG/VisualStudio.ProjectTemplates</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/DevilDogTG/VisualStudio.ProjectTemplates</RepositoryUrl>
+		<PackageTags>dotnet,vsstudio,templates</PackageTags>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Remove="logsettings.json" />
+		<Content Remove="template.config.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="logo.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="LICENSE">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="logo.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="logsettings.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DMNSN.Core" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+		<PackageReference Include="Serilog" Version="4.3.0" />
+		<PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+		<PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+		<PackageReference Include="Serilog.Settings.Configuration" Version="8.0.4" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+	</ItemGroup>
+</Project>
