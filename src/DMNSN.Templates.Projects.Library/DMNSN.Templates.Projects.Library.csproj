@@ -19,6 +19,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="template.config.json" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Content Include="logo.ico" />
 	</ItemGroup>
 
