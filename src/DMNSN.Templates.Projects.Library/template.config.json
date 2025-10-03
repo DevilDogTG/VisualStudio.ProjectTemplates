@@ -1,0 +1,28 @@
+{
+  "author": "DMNSN",
+  "category": "Class Libraries",
+  "createInPlace": true,
+  "createNewFolder": true,
+  "defaultNamespace": "DMNSN.Templates.Projects.Library",
+  "description": "A modern .NET class library template with nullable, analyzers, and packaging metadata",
+  "enableLocationBrowseButton": true,
+  "languageTag": "csharp",
+  "platformTag": "any",
+  "locationField": "Enabled",
+  "maxFrameworkVersion": "8.0",
+  "name": "DMNSN Class Library",
+  "projectType": "CSharp",
+  "projectTypeTag": "classlib",
+  "provideDefaultName": true,
+  "requiredFrameworkVersion": "8.0",
+  "sortOrder": 1000,
+  "supportedLanguages": [
+    "C#"
+  ],
+  "tags": [
+    "library",
+    "class-library"
+  ],
+  "templateGroupIdentity": "DMNSN.Templates.Libraries",
+  "version": "8.0.1"
+}
