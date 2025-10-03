@@ -257,11 +257,11 @@ foreach ($project in $projectFolders) {
         $platformTag = if ($config.platformTag) { $config.platformTag } else { "" }
         $projectTypeTag = if ($config.projectTypeTag) { $config.projectTypeTag } else { "project" }
         $sortOrder = if ($config.sortOrder) { $config.sortOrder } else { 1000 }
-        $createNewFolder = if ($config.createNewFolder -ne $null) { $config.createNewFolder.ToString().ToLower() } else { "true" }
-        $provideDefaultName = if ($config.provideDefaultName -ne $null) { $config.provideDefaultName.ToString().ToLower() } else { "true" }
+        $createNewFolder = if ($null -ne $config.createNewFolder) { $config.createNewFolder.ToString().ToLower() } else { "true" }
+        $provideDefaultName = if ($null -ne $config.provideDefaultName) { $config.provideDefaultName.ToString().ToLower() } else { "true" }
         $locationField = if ($config.locationField) { $config.locationField } else { "Enabled" }
-        $enableLocationBrowseButton = if ($config.enableLocationBrowseButton -ne $null) { $config.enableLocationBrowseButton.ToString().ToLower() } else { "true" }
-        $createInPlace = if ($config.createInPlace -ne $null) { $config.createInPlace.ToString().ToLower() } else { "true" }
+        $enableLocationBrowseButton = if ($null -ne $config.enableLocationBrowseButton) { $config.enableLocationBrowseButton.ToString().ToLower() } else { "true" }
+        $createInPlace = if ($null -ne $config.createInPlace) { $config.createInPlace.ToString().ToLower() } else { "true" }
         $requiredFrameworkVersion = if ($config.requiredFrameworkVersion) { $config.requiredFrameworkVersion } else { "4.0" }
         $maxFrameworkVersion = if ($config.maxFrameworkVersion) { $config.maxFrameworkVersion } else { "" }
         $templateGroupIdentity = if ($config.templateGroupIdentity) { $config.templateGroupIdentity } else { "" }
