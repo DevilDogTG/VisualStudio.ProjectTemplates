@@ -10,6 +10,8 @@
   "locationField": "Enabled",
   "maxFrameworkVersion": "8.0",
   "name": "DMNSN Worker Service",
+  "identity": "DMNSN.WorkerApp.CSharp",
+  "shortName": "dmnsn-worker",
   "platformTag": "windows",
   "projectType": "CSharp",
   "projectTypeTag": "service",

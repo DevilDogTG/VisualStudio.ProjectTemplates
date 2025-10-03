@@ -11,6 +11,8 @@
   "locationField": "Enabled",
   "maxFrameworkVersion": "8.0",
   "name": "DMNSN Console Application",
+  "identity": "DMNSN.ConsoleApp.CSharp",
+  "shortName": "dmnsn-console",
   "projectType": "CSharp",
   "projectTypeTag": "console",
   "provideDefaultName": true,

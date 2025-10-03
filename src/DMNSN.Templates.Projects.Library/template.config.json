@@ -11,6 +11,8 @@
   "locationField": "Enabled",
   "maxFrameworkVersion": "8.0",
   "name": "DMNSN Class Library",
+  "identity": "DMNSN.ClassLibrary.CSharp",
+  "shortName": "dmnsn-lib",
   "projectType": "CSharp",
   "projectTypeTag": "classlib",
   "provideDefaultName": true,

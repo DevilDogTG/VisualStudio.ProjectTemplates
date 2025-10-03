@@ -11,6 +11,8 @@
   "locationField": "Enabled",
   "maxFrameworkVersion": "8.0",
   "name": "DMNSN Web API (REST)",
+  "identity": "DMNSN.WebApi.Rest.CSharp",
+  "shortName": "dmnsn-webapi",
   "projectType": "CSharp",
   "projectTypeTag": "webapi",
   "provideDefaultName": true,
