@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Version>8.0.0</Version>
+		<Copyright>Copyright 2025 @ DevDogs</Copyright>
+		<Authors>DevilDogTG</Authors>
+		<Company>DevDogs</Company>
+		<Description>Class library project template</Description>
+		<Copyright>Copyright (c) 2025 DevDogs</Copyright>
+		<PackageIcon>logo.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageProjectUrl>https://github.com/DevilDogTG/VisualStudio.ProjectTemplates</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/DevilDogTG/VisualStudio.ProjectTemplates</RepositoryUrl>
+		<PackageTags>dotnet,vsstudio,templates,library,classlib</PackageTags>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Include="logo.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="README.md">
+			<PackagePath>\</PackagePath>
+			<Pack>True</Pack>
+		</None>
+	</ItemGroup>
+
+</Project>

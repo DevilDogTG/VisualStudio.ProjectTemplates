@@ -1,17 +1,30 @@
-## DMNSN.Templates.Projects.ConsoleApp code style
+# DMNSN.Templates.Projects.ConsoleApp
 
-`DMNSN.Templates.Projects.ConsoleApp` is the reference implementation for these templates. The project adopts a concise C# layout with the following characteristics:
+A modern .NET 8 console application template with structured logging, dependency injection, rich configuration, and opinionated defaults.
 
-- **Top-level statements** in `Program.cs` configure the host and Serilog
-  without an explicit `Main` method.
-- **File-scoped namespaces** and C# *primary constructors* keep service
-  definitions compact while supporting dependency injection.
-- Command line options are parsed with **CommandLineParser** using `[Verb]`
-  and `[Option]` attributes.
-- Configuration values are bound to strongly typed classes via
-  `IOptionsMonitor<T>` and support live reload with change notifications.
-- Services that watch for configuration changes implement `IDisposable` to
-  clean up subscriptions.
-- An `.editorconfig` file suppresses `CS8604` warnings to reduce nullability
-  noise during development.
+## Features
+
+- Top-level statements in `Program.cs` configure the host and Serilog without an explicit `Main`.
+- File-scoped namespaces and C# primary constructors keep services compact and DI-friendly.
+- Command line parsing via `CommandLineParser` with `[Verb]` and `[Option]` attributes.
+- Strongly-typed configuration via `IOptionsMonitor<T>` with live reload.
+- `IDisposable` cleanup for services that subscribe to change tokens.
+- `.editorconfig` tuned to reduce nullability noise while keeping safety.
+
+## Dependencies
+
+- Serilog (+ Console/File sinks, Settings.Configuration, Enrichers.Environment)
+- Microsoft.Extensions.Hosting / DependencyInjection
+- CommandLineParser
+- Newtonsoft.Json
+
+## Getting started
+
+- Restore and build. Run the project to see structured logs and DI wiring in action.
+- Update `appsettings.json` and `logsettings.json` to customize logging and configuration.
+- Add verbs and options to expand the CLI surface area.
+
+## Packaging
+
+This template ships with packaging metadata (`PackageIcon`, `PackageReadmeFile`, `PackageLicenseFile`) to support distribution through local VS template folders.
 

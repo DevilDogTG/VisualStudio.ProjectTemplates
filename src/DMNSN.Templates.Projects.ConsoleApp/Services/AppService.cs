@@ -28,8 +28,9 @@ public class AppService(
     {
         var currentSettings = config.CurrentValue;
         logger.LogInformation("Running {Name}", nameof(AppService));
-        logger.LogInformation("Application Name: {AppName}", currentSettings.ApplicationName);
-        logger.LogInformation("Args: {Args}", JsonConvert.SerializeObject(args));
+        logger.LogInformation("Application Name: {AppName}; Args: {Args}",
+            currentSettings.ApplicationName,
+            JsonConvert.SerializeObject(args));
         return 0;
     }
 

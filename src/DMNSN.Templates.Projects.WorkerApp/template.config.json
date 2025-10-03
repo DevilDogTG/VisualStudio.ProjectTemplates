@@ -27,5 +27,5 @@
     "dependency-injection"
   ],
   "templateGroupIdentity": "DMNSN.Templates.Workloads",
-  "version": "8.0.17"
+  "version": ".."
 }
