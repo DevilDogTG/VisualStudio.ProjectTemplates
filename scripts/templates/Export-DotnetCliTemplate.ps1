@@ -4,6 +4,7 @@ param (
     [string]$Version,
     [switch]$DryRun,
     [switch]$NoPack,
+    [switch]$InstallLatestPackage,
     [string]$TemplatesPath = "output",
     [string]$PackagesPath = "artifacts",
     [string]$LogPath
@@ -106,6 +107,40 @@ function Resolve-RootedPath {
 
 $TemplatesFullPath = Resolve-RootedPath -Base $RootPath -PathValue $TemplatesPath
 $PackagesFullPath = Resolve-RootedPath -Base $RootPath -PathValue $PackagesPath
+
+function Get-LatestPackageInfo {
+    param (
+        [string]$PackagesRoot,
+        [string]$Identity
+    )
+
+    if ([string]::IsNullOrWhiteSpace($PackagesRoot) -or -not (Test-Path $PackagesRoot)) {
+        return $null
+    }
+
+    $regex = '^{0}\.(?<version>.+)\.nupkg$' -f ([regex]::Escape($Identity))
+    $candidates = Get-ChildItem -Path $PackagesRoot -Filter '*.nupkg' -File -ErrorAction SilentlyContinue | ForEach-Object {
+        $match = [regex]::Match($_.Name, $regex)
+        if ($match.Success) {
+            $versionText = $match.Groups['version'].Value
+            $parsedVersion = $null
+            $hasVersion = [System.Version]::TryParse($versionText, [ref]$parsedVersion)
+            [pscustomobject]@{
+                File = $_
+                VersionText = $versionText
+                Version = if ($hasVersion) { $parsedVersion } else { $null }
+                HasVersion = $hasVersion
+            }
+        }
+    }
+
+    if (-not $candidates) {
+        return $null
+    }
+
+    $ordered = $candidates | Sort-Object -Property @{ Expression = { $_.HasVersion }; Descending = $true }, @{ Expression = { $_.Version }; Descending = $true }, @{ Expression = { $_.VersionText }; Descending = $true }
+    return $ordered | Select-Object -First 1
+}
 
 $script:LogFile = $null
 if ($LogPath) {
@@ -420,6 +455,32 @@ foreach ($projectDir in $projectDirs | Sort-Object FullName) {
         }
     } else {
         Log "  Skipping dotnet pack due to -NoPack" "Yellow"
+    }
+
+    if ($InstallLatestPackage -and $PackagesFullPath) {
+        $latestInfo = Get-LatestPackageInfo -PackagesRoot $PackagesFullPath -Identity $config.identity
+        if ($latestInfo) {
+            $relativePackagePath = Get-RelativePath $RootPath $latestInfo.File.FullName
+            $packageDisplayPath = $relativePackagePath ?? $latestInfo.File.FullName
+            Log ("Uninstalling package if present: {0}" -f $config.identity)
+            $uninstallArgs = @("new", "uninstall", $config.identity)
+            & dotnet @uninstallArgs | ForEach-Object { Log ("    {0}" -f $_) "White" }
+            $uninstallExitCode = $LASTEXITCODE
+            if ($uninstallExitCode -eq 0) {
+                Log "  Previous package removed." "Yellow"
+            } elseif ($uninstallExitCode -eq 103) {
+                Log "  Package not previously installed; skipping uninstall." "Green"
+            } else {
+                throw ("dotnet new uninstall failed for {0} (exit code {1})." -f $config.identity, $uninstallExitCode)
+            }
+            Log ("📦 Installing package: {0}" -f $packageDisplayPath)
+            $installArgs = @("new", "install", "--force", $latestInfo.File.FullName)
+            & dotnet @installArgs | ForEach-Object { Log ("    {0}" -f $_) "White" }
+            if ($LASTEXITCODE -ne 0) {
+                throw "dotnet new install failed for $($config.identity)."
+            }
+            Log "  Package installed." "Green"
+        }
     }
 }
 
