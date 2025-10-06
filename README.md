@@ -34,9 +34,10 @@ All templates target .NET 8.0 and embrace a database-first pattern backed by SQL
 
 1. Export the templates by using:
 	```powershell
-	.\scripts\templates\Export-DotnetCliTemplate.ps1
+	.\scripts\templates\Export-DotnetCliTemplate.ps1 -All
 	```
-	- Use `-DryRun` to preview changes or `-LogPath` to specify a custom log file.
+	- Use `-Projects "ConsoleApp","Library"` to export specific templates.
+	- Add `-DryRun` to preview changes or `-LogPath` to specify a custom log file.
 2. Use the generated `.nupkg` files in `artifacts` to install or update the templates for `dotnet new`.
 	```powershell
 	dotnet new install .\artifacts\<template-name>.nupkg
@@ -60,69 +61,57 @@ dotnet new uninstall DMNSN.ConsoleApp.CSharp
 
 ## Export script usage (parameters and examples)
 
-The export script lives at `scripts/templates/Export-DmnsnTemplate.ps1`. Examples below demonstrate each parameter.
+The export script lives at `scripts/templates/Export-DotnetCliTemplate.ps1` and builds `.nupkg` packages for `dotnet new install`.
 
-- Dry-run preview (no files changed, no ZIPs written, hash not updated):
-
-  ```powershell
-  .\scripts\templates\Export-DmnsnTemplate.ps1 -DryRun
-  ```
-
-- Custom log path (folder/file created if missing):
+- Export every template and create packages in `artifacts`:
 
   ```powershell
-  .\scripts\templates\Export-DmnsnTemplate.ps1 -LogPath .\logs\exporting-custom.log
+  .\scripts\templates\Export-DotnetCliTemplate.ps1 -All
   ```
 
-- Export specific projects only (case-insensitive; partial names allowed):
+- Export specific templates (case-insensitive; partial names allowed):
 
   ```powershell
-  # Multiple names inline
-  .\scripts\templates\Export-DmnsnTemplate.ps1 -Projects "DMNSN.Templates.Projects.ConsoleApp","WebApiRest"
-
-  # Or using an array
-  $projects = @("ConsoleApp","Library")
-  .\scripts\templates\Export-DmnsnTemplate.ps1 -Projects $projects
+  .\scripts\templates\Export-DotnetCliTemplate.ps1 -Projects "ConsoleApp","WebApiRest"
   ```
 
-- Export all projects explicitly (default behavior when no `-Projects` are passed):
+- Set an explicit package version for the templates you export:
 
   ```powershell
-  .\scripts\templates\Export-DmnsnTemplate.ps1 -All
+  .\scripts\templates\Export-DotnetCliTemplate.ps1 -All -Version 8.0.2
   ```
 
-  Note: If you pass both `-All` and `-Projects`, the script proceeds with the `-Projects` selection.
-
-- Re-export without change detection or version bump (repackage using the current version):
+- Preview what would be produced without writing files or packing:
 
   ```powershell
-  .\scripts\templates\Export-DmnsnTemplate.ps1 -Projects "Library" -ReExportOnly
+  .\scripts\templates\Export-DotnetCliTemplate.ps1 -Projects "Library" -DryRun
   ```
 
-- Combine options (e.g., preview a filtered run or re-export multiple):
+- Skip building `.nupkg` files (useful when you only need the transformed template folder):
 
   ```powershell
-  # Preview two projects without making changes
-  .\scripts\templates\Export-DmnsnTemplate.ps1 -Projects "ConsoleApp","WebApiRest" -DryRun
-
-  # Re-export two projects using their current versions
-  .\scripts\templates\Export-DmnsnTemplate.ps1 -Projects "ConsoleApp","Library" -ReExportOnly
+  .\scripts\templates\Export-DotnetCliTemplate.ps1 -Projects "ConsoleApp" -NoPack
   ```
+
+Additional switches:
+- `-TemplatesPath` overrides the staging folder for generated templates (defaults to `output`).
+- `-PackagesPath` controls where `.nupkg` files are written (defaults to `artifacts`).
+- `-LogPath` writes the detailed log to a specific location; otherwise a timestamped file is placed under `logs`.
 
 Notes:
-- Output ZIPs are saved to `output`. Older ZIPs for a project are removed during export, keeping only the current version.
-- A `.template.hash` file is written in each original project folder to track content changes (skipped during `-DryRun`).
-- If `logo.ico` or `preview.png` exist at the repository root, they are bundled as `__TemplateIcon.ico` and `__TemplatePreview.png`.
+- Output templates are staged under `output` before packing. Older staged content for the same template is replaced each run.
+- `.template.hash` files still track content changes in the source projects (skipped during `-DryRun`).
+- If `logo.ico` or `preview.png` exist at the repository root, they are bundled automatically as `__TemplateIcon.ico` and `__TemplatePreview.png`.
 
 ## Template configuration
 
-Each template folder contains a `template.config.json` file. The export script reads this metadata and generates a rich `.vstemplate` manifest automatically.# 
+Each template folder contains a `template.config.json` file. The export script reads this metadata and generates a rich `.vstemplate` manifest automatically.
 
 Use this file as a quick pointer when browsing the repository structure:
 
 1. Update the `template.config.json` of the template you want to export.
 2. Consult the README for property descriptions, tag recommendations, and sample manifests.
-3. Run `./scripts/templates/Export-DmnsnTemplate.ps1` to regenerate the `.vstemplate` and ZIP package.
+3. Run `./scripts/templates/Export-DotnetCliTemplate.ps1 -Projects "ConsoleApp"` (swap in your project name) to regenerate the `.template.config` folder and pack a `.nupkg` for the dotnet CLI.
 
 ### Quick reference
 

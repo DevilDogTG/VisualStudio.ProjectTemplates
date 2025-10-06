@@ -297,6 +297,11 @@ foreach ($projectDir in $projectDirs | Sort-Object FullName) {
 
     $templateConfigDir = Join-Path $templateRoot ".template.config"
     $templateJsonPath = Join-Path $templateConfigDir "template.json"
+    if ($config.icon) {
+        $iconAbsolute = if ([System.IO.Path]::IsPathRooted($config.icon)) { $config.icon } else { Join-Path $templateRoot $config.icon }
+        $relativeIcon = ([System.IO.Path]::GetRelativePath($templateConfigDir, $iconAbsolute)) -replace '\\', '/'
+        $templateModel.icon = $config.icon
+    }
     $templateJsonContent = ConvertTo-Json $templateModel -Depth 10
 
     if (-not $DryRun) {
