@@ -1,0 +1,33 @@
+{
+  "author": "DMNSN",
+  "category": "Background Services",
+  "createInPlace": true,
+  "createNewFolder": true,
+  "defaultNamespace": "DMNSN.Templates.Projects.WorkerApp",
+  "description": "A modern worker service template for background processing with logging, dependency injection, and health checks",
+  "enableLocationBrowseButton": true,
+  "languageTag": "csharp",
+  "locationField": "Enabled",
+  "maxFrameworkVersion": "8.0",
+  "name": "DMNSN Worker Service",
+  "identity": "DMNSN.WorkerApp.CSharp",
+  "shortName": "dmnsn-worker",
+  "platformTag": "windows",
+  "projectType": "CSharp",
+  "projectTypeTag": "service",
+  "provideDefaultName": true,
+  "requiredFrameworkVersion": "8.0",
+  "sortOrder": 900,
+  "supportedLanguages": [
+    "C#"
+  ],
+  "tags": [
+    "service",
+    "worker",
+    "background",
+    "logging",
+    "dependency-injection"
+  ],
+  "templateGroupIdentity": "DMNSN.Templates.Workloads",
+  "version": "8.0.1"
+}

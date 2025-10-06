@@ -1,0 +1,35 @@
+{
+  "author": "DMNSN",
+  "category": "Web Applications",
+  "createInPlace": true,
+  "createNewFolder": true,
+  "defaultNamespace": "DMNSN.Templates.Projects.WebApiRest",
+  "description": "A modern .NET 8 RESTful Web API template with controllers, Swagger/OpenAPI, logging, dependency injection, and configuration",
+  "enableLocationBrowseButton": true,
+  "languageTag": "csharp",
+  "platformTag": "windows",
+  "locationField": "Enabled",
+  "maxFrameworkVersion": "8.0",
+  "name": "DMNSN Web API (REST)",
+  "identity": "DMNSN.WebApi.Rest.CSharp",
+  "shortName": "dmnsn-webapi",
+  "projectType": "CSharp",
+  "projectTypeTag": "webapi",
+  "provideDefaultName": true,
+  "requiredFrameworkVersion": "8.0",
+  "sortOrder": 800,
+  "supportedLanguages": [
+    "C#"
+  ],
+  "tags": [
+    "web",
+    "api",
+    "rest",
+    "controllers",
+    "logging",
+    "dependency-injection",
+    "configuration"
+  ],
+  "templateGroupIdentity": "DMNSN.Templates.Web",
+  "version": "8.0.1"
+}
