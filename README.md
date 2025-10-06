@@ -32,19 +32,31 @@ All templates target .NET 8.0 and embrace a database-first pattern backed by SQL
 
 ## Quick start
 
-1. Export the templates to `./output`:
+1. Export the templates by using:
 	```powershell
-	.\scripts\templates\Export-DmnsnTemplate.ps1
+	.\scripts\templates\Export-DotnetCliTemplate.ps1
 	```
 	- Use `-DryRun` to preview changes or `-LogPath` to specify a custom log file.
-2. Install the generated ZIP(s) into Visual Studio:
+2. Use the generated `.nupkg` files in `artifacts` to install or update the templates for `dotnet new`.
 	```powershell
-	Copy-Item -Path .\output\* -Destination "$env:USERPROFILE\Documents\Visual Studio 2022\Templates\ProjectTemplates" -Recurse -Force
+	dotnet new install .\artifacts\<template-name>.nupkg
 	```
-	Replace `Visual Studio 2022` with your installed version path if different.
+	- Replace the file name with any other package in `artifacts`.
+	- Rerun `dotnet new install` with the newer `.nupkg` to update an existing installation.
 3. Launch Visual Studio and create a new project using the DMNSN templates.
 
 For project-specific coding conventions, see the `README.md` in each `src/DMNSN.Templates.Projects.*` folder.
+
+### Uninstalling a template
+
+```powershell
+dotnet new uninstall DMNSN.ConsoleApp.CSharp
+```
+
+#### Finding the template identity
+
+- `dotnet new list DMNSN` shows all installed DMNSN templates; the `Identity` column is the value for `dotnet new uninstall`.
+- Each `src/DMNSN.Templates.Projects.*` folder contains a `template.config.json` with an `identity` property that matches the uninstall name.
 
 ## Export script usage (parameters and examples)
 
