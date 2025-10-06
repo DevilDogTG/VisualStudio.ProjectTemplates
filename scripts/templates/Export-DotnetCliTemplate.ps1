@@ -5,7 +5,7 @@ param (
     [switch]$DryRun,
     [switch]$NoPack,
     [string]$TemplatesPath = "output",
-    [string]$PackagesPath = "artifacts/dotnetcli",
+    [string]$PackagesPath = "artifacts",
     [string]$LogPath
 )
 
