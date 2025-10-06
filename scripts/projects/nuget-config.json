@@ -1,0 +1,6 @@
+{
+    "rootRelativePath": "../../",
+    "projectName": "MyNuGetPackage",
+    "tagPrefix": "v",
+    "nugetSource": "https://api.nuget.org/v3/index.json"
+}
