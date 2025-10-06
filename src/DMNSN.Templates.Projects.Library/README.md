@@ -20,4 +20,3 @@ Opinionated .NET 8 class library template with nullable enabled, analyzers-ready
 - Add your domain classes, services, and extension methods.
 - Reference this library from your app or other templates.
 - Publish the template and create a new project in Visual Studio using the DMNSN Class Library template.
-

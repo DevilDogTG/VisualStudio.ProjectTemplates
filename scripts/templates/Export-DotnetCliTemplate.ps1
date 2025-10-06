@@ -191,7 +191,7 @@ $excludedExtensions = @(".user")
 foreach ($projectDir in $projectDirs | Sort-Object FullName) {
     $projectPath = $projectDir.FullName
     $projectName = $projectDir.Name
-    Log "Processing $projectName" "Cyan"
+    Log ("⚙ Processing '{0}'..." -f $projectName) "Cyan"
 
     $configPath = Join-Path $projectPath "template.config.json"
     if (-not (Test-Path $configPath)) {
@@ -208,7 +208,7 @@ foreach ($projectDir in $projectDirs | Sort-Object FullName) {
     $language = Map-LanguageTag $config.languageTag
 
     $classifications = New-Object System.Collections.Generic.List[string]
-    if ($config.category) { $classifications.Add([string]$config.category) }
+    # if ($config.category) { $classifications.Add([string]$config.category) }
     if ($config.tags) {
         foreach ($tag in $config.tags) {
             if ($tag) { $classifications.Add([string]$tag) }
@@ -255,6 +255,41 @@ foreach ($projectDir in $projectDirs | Sort-Object FullName) {
     $packageTags = @("dotnet-new", "template", $config.projectTypeTag) + @($config.tags)
     $packageTags = $packageTags | Where-Object { $_ } | Sort-Object -Unique
     $packageTagsString = $packageTags -join ";"
+
+    $displayTags = $null
+    $tagItems = @()
+    foreach ($tag in @($config.tags)) {
+        if (-not [string]::IsNullOrWhiteSpace($tag)) {
+            $tagItems += [string]$tag
+        }
+    }
+    if ($tagItems.Count -gt 0) {
+        $displayTags = $tagItems -join ","
+    }
+
+    if ($config.name) {
+        Log ("📋 Template Name: {0}" -f $config.name)
+    }
+
+    if ($config.author) {
+        Log ("👤 Author: {0}" -f $config.author)
+    }
+
+    if ($packageVersion) {
+        Log ("🔢 Version: {0}" -f $packageVersion)
+    }
+
+    if ($displayTags) {
+        Log ("🏷️ Tags: {0}" -f $displayTags)
+    }
+
+    if ($config.category) {
+        Log ("📂 Category: {0}" -f $config.category)
+    }
+
+    if ($config.projectType) {
+        Log ("🎯 Project Type: {0}" -f $config.projectType)
+    }
 
     $folderSafeName = Get-SafeName -Name $config.shortName -Fallback $config.identity
     $templateRoot = Join-Path $TemplatesFullPath $folderSafeName
