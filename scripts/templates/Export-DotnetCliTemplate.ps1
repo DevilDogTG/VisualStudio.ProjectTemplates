@@ -7,7 +7,10 @@ param (
     [switch]$InstallLatestPackage,
     [string]$TemplatesPath = "output",
     [string]$PackagesPath = "artifacts",
-    [string]$LogPath
+    [string]$LogPath,
+    [string]$PackageId = "DMNSN.ProjectTemplates",
+    [string]$PackageTitle,
+    [string]$PackageDescription
 )
 
 $ErrorActionPreference = "Stop"
@@ -219,6 +222,12 @@ if ($projectDirs.Count -eq 0) {
     return
 }
 
+$templateSummaries = New-Object System.Collections.Generic.List[pscustomobject]
+$aggregateTags = New-Object System.Collections.Generic.HashSet[string]([StringComparer]::OrdinalIgnoreCase)
+$null = $aggregateTags.Add("dotnet-new")
+$null = $aggregateTags.Add("template")
+$aggregateAuthors = New-Object System.Collections.Generic.HashSet[string]([StringComparer]::OrdinalIgnoreCase)
+
 $excludedDirectories = @("bin", "obj", "logs", ".vs", ".git", "artifacts", "TestResults")
 $excludedFileNames = @(".template.hash", "template.config.json")
 $excludedExtensions = @(".user")
@@ -289,7 +298,6 @@ foreach ($projectDir in $projectDirs | Sort-Object FullName) {
 
     $packageTags = @("dotnet-new", "template", $config.projectTypeTag) + @($config.tags)
     $packageTags = $packageTags | Where-Object { $_ } | Sort-Object -Unique
-    $packageTagsString = $packageTags -join ";"
 
     $displayTags = $null
     $tagItems = @()
@@ -368,8 +376,6 @@ foreach ($projectDir in $projectDirs | Sort-Object FullName) {
     $templateConfigDir = Join-Path $templateRoot ".template.config"
     $templateJsonPath = Join-Path $templateConfigDir "template.json"
     if ($config.icon) {
-        $iconAbsolute = if ([System.IO.Path]::IsPathRooted($config.icon)) { $config.icon } else { Join-Path $templateRoot $config.icon }
-        $relativeIcon = ([System.IO.Path]::GetRelativePath($templateConfigDir, $iconAbsolute)) -replace '\\', '/'
         $templateModel.icon = $config.icon
     }
     $templateJsonContent = ConvertTo-Json $templateModel -Depth 10
@@ -382,41 +388,122 @@ foreach ($projectDir in $projectDirs | Sort-Object FullName) {
         Log "  Dry run: would write template.json to $templateJsonPath" "DarkGray"
     }
 
-    if (-not $NoPack) {
-        if ($DryRun) {
-            Log "  Dry run: would pack template from $templateRoot" "DarkGray"
+    foreach ($tag in $packageTags) {
+        $null = $aggregateTags.Add([string]$tag)
+    }
+
+    if ($config.author) {
+        $null = $aggregateAuthors.Add([string]$config.author)
+    }
+
+    [void]$templateSummaries.Add([pscustomobject]@{
+        ProjectName = $projectName
+        Identity = $config.identity
+        TemplateName = $config.name
+        TemplateRoot = $templateRoot
+        FolderSafeName = $folderSafeName
+        PackageVersion = $packageVersion
+    })
+}
+
+$selectedTemplateCount = $templateSummaries.Count
+if ($selectedTemplateCount -eq 0) {
+    Log "No templates were processed successfully." "Yellow"
+    return
+}
+
+$sortedTemplateSummaries = $templateSummaries | Sort-Object -Property @{ Expression = { $_.TemplateName }; Ascending = $true }, @{ Expression = { $_.ProjectName }; Ascending = $true }
+$templateNames = @($sortedTemplateSummaries | ForEach-Object { $_.TemplateName } | Where-Object { $_ })
+
+$versionCandidates = @()
+foreach ($summary in $sortedTemplateSummaries) {
+    $versionText = $summary.PackageVersion
+    if ([string]::IsNullOrWhiteSpace($versionText)) { continue }
+    $parsedVersion = $null
+    $hasVersion = [System.Version]::TryParse($versionText, [ref]$parsedVersion)
+    $versionCandidates += [pscustomobject]@{
+        VersionText = $versionText
+        Version = $parsedVersion
+        HasVersion = $hasVersion
+    }
+}
+
+$aggregatedVersion = if ($Version) {
+    $Version
+} elseif ($versionCandidates.Count -gt 0) {
+    $orderedVersions = $versionCandidates | Sort-Object -Property @{ Expression = { $_.HasVersion }; Descending = $true }, @{ Expression = { $_.Version }; Descending = $true }, @{ Expression = { $_.VersionText }; Descending = $true }
+    $orderedVersions[0].VersionText
+} else {
+    "1.0.0"
+}
+
+$aggregateAuthorsList = if ($aggregateAuthors.Count -gt 0) { @($aggregateAuthors) | Sort-Object -Unique } else { @("Unknown") }
+$aggregateTagsString = (@($aggregateTags) | Sort-Object -Unique) -join ";"
+
+if ($NoPack) {
+    Log "Skipping dotnet pack due to -NoPack" "Yellow"
+} elseif ($DryRun) {
+    Log ("Dry run: would produce package {0} version {1} containing {2} template(s)." -f $PackageId, $aggregatedVersion, $selectedTemplateCount) "DarkGray"
+} else {
+    $stagingSafe = Get-SafeName -Name $PackageId -Fallback "TemplatePack"
+    $packStagingRoot = Join-Path $PackagesFullPath ("_staging_{0}" -f $stagingSafe)
+    if (Test-Path $packStagingRoot) {
+        Remove-Item -Path $packStagingRoot -Recurse -Force
+    }
+    New-Item -ItemType Directory -Force -Path $packStagingRoot | Out-Null
+
+    $contentRoot = Join-Path $packStagingRoot "content"
+    New-Item -ItemType Directory -Force -Path $contentRoot | Out-Null
+
+    foreach ($summary in $sortedTemplateSummaries) {
+        $sourceRoot = $summary.TemplateRoot
+        if (-not (Test-Path $sourceRoot)) { continue }
+
+        $destinationRoot = Join-Path $contentRoot $summary.FolderSafeName
+        if (Test-Path $destinationRoot) {
+            Remove-Item -Path $destinationRoot -Recurse -Force
+        }
+        New-Item -ItemType Directory -Force -Path $destinationRoot | Out-Null
+
+        Get-ChildItem -LiteralPath $sourceRoot -Force | ForEach-Object {
+            $destination = Join-Path $destinationRoot $_.Name
+            Copy-Item -LiteralPath $_.FullName -Destination $destination -Recurse -Force
+        }
+    }
+
+    $defaultTitle = if ($PackageTitle) {
+        $PackageTitle
+    } elseif ($aggregateAuthorsList.Count -eq 1) {
+        "{0} Project Templates" -f $aggregateAuthorsList[0]
+    } else {
+        "Project Templates"
+    }
+
+    $title = if ($PackageTitle) { $PackageTitle } else { $defaultTitle }
+    $description = if ($PackageDescription) { $PackageDescription } else {
+        if ($templateNames.Count -gt 0) {
+            "Includes templates: {0}" -f ($templateNames -join ", ")
         } else {
-            $stagingSafe = Get-SafeName -Name $config.identity -Fallback $folderSafeName
-            $packStagingRoot = Join-Path $PackagesFullPath ("_staging_{0}" -f $stagingSafe)
-            if (Test-Path $packStagingRoot) {
-                Remove-Item -Path $packStagingRoot -Recurse -Force
-            }
-            New-Item -ItemType Directory -Force -Path $packStagingRoot | Out-Null
+            "Collection of project templates."
+        }
+    }
 
-            $contentRoot = Join-Path $packStagingRoot "content"
-            New-Item -ItemType Directory -Force -Path $contentRoot | Out-Null
-
-            Get-ChildItem -LiteralPath $templateRoot -Force | ForEach-Object {
-                $destination = Join-Path $contentRoot $_.Name
-                Copy-Item -LiteralPath $_.FullName -Destination $destination -Recurse -Force
-            }
-
-            $projectBaseName = ($folderSafeName -replace "[^A-Za-z0-9]", '')
-            if ([string]::IsNullOrWhiteSpace($projectBaseName)) {
-                $projectBaseName = "Template"
-            }
-            $templateProjectPath = Join-Path $packStagingRoot ("{0}.Template.csproj" -f $projectBaseName)
-            $templateProjectContent = @"
+    $projectBaseName = ($stagingSafe -replace "[^A-Za-z0-9]", '')
+    if ([string]::IsNullOrWhiteSpace($projectBaseName)) {
+        $projectBaseName = "TemplatePack"
+    }
+    $templateProjectPath = Join-Path $packStagingRoot ("{0}.TemplatePack.csproj" -f $projectBaseName)
+    $templateProjectContent = @"
 <Project Sdk='Microsoft.NET.Sdk'>
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <PackageId>$($config.identity)</PackageId>
-    <Version>$packageVersion</Version>
+    <PackageId>$PackageId</PackageId>
+    <Version>$aggregatedVersion</Version>
     <PackageType>Template</PackageType>
-    <Authors>$($config.author)</Authors>
-    <Title>$($config.name)</Title>
-    <Description>$($config.description)</Description>
-    <PackageTags>$packageTagsString</PackageTags>
+    <Authors>$([string]::Join(';', $aggregateAuthorsList))</Authors>
+    <Title>$title</Title>
+    <Description>$description</Description>
+    <PackageTags>$aggregateTagsString</PackageTags>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NoDefaultExcludes>true</NoDefaultExcludes>
     <EnableDefaultItems>false</EnableDefaultItems>
@@ -426,44 +513,42 @@ foreach ($projectDir in $projectDirs | Sort-Object FullName) {
   </ItemGroup>
 </Project>
 "@
-            Set-Content -Path $templateProjectPath -Value $templateProjectContent -Encoding UTF8
+    Set-Content -Path $templateProjectPath -Value $templateProjectContent -Encoding UTF8
 
-            Log "  Restoring template project..." "DarkGray"
-            $restoreArgs = @("restore", $templateProjectPath)
-            & dotnet @restoreArgs | ForEach-Object { Log "    $_" "DarkGray" }
-            if ($LASTEXITCODE -ne 0) {
-                throw "dotnet restore failed for $projectName."
-            }
+    Log ("🚀 Packing {0} template(s) into {1} v{2}..." -f $selectedTemplateCount, $PackageId, $aggregatedVersion) "Green"
 
-            Log "  Packing template..." "Green"
-            $packArgs = @("pack", $templateProjectPath, "--no-build", "-c", "Release", "-o", $PackagesFullPath)
-            & dotnet @packArgs | ForEach-Object { Log "    $_" "DarkGray" }
-            if ($LASTEXITCODE -ne 0) {
-                throw "dotnet pack failed for $projectName."
-            }
+    Log "  Restoring template pack project..." "DarkGray"
+    $restoreArgs = @("restore", $templateProjectPath)
+    & dotnet @restoreArgs | ForEach-Object { Log "    $_" "DarkGray" }
+    if ($LASTEXITCODE -ne 0) {
+        throw "dotnet restore failed for aggregated package."
+    }
 
-            $expectedPackage = Join-Path $PackagesFullPath ("{0}.{1}.nupkg" -f $config.identity, $packageVersion)
-            if (Test-Path $expectedPackage) {
-                Log "  Package created: $expectedPackage" "Green"
-            } else {
-                Log "  dotnet pack completed but package not found at expected path." "Yellow"
-            }
+    Log "  Packing template bundle..." "Green"
+    $packArgs = @("pack", $templateProjectPath, "--no-build", "-c", "Release", "-o", $PackagesFullPath)
+    & dotnet @packArgs | ForEach-Object { Log "    $_" "DarkGray" }
+    if ($LASTEXITCODE -ne 0) {
+        throw "dotnet pack failed for aggregated package."
+    }
 
-            if (Test-Path $packStagingRoot) {
-                Remove-Item -Path $packStagingRoot -Recurse -Force
-            }
-        }
+    $expectedPackage = Join-Path $PackagesFullPath ("{0}.{1}.nupkg" -f $PackageId, $aggregatedVersion)
+    if (Test-Path $expectedPackage) {
+        Log "  Package created: $expectedPackage" "Green"
     } else {
-        Log "  Skipping dotnet pack due to -NoPack" "Yellow"
+        Log "  dotnet pack completed but package not found at expected path." "Yellow"
+    }
+
+    if (Test-Path $packStagingRoot) {
+        Remove-Item -Path $packStagingRoot -Recurse -Force
     }
 
     if ($InstallLatestPackage -and $PackagesFullPath) {
-        $latestInfo = Get-LatestPackageInfo -PackagesRoot $PackagesFullPath -Identity $config.identity
+        $latestInfo = Get-LatestPackageInfo -PackagesRoot $PackagesFullPath -Identity $PackageId
         if ($latestInfo) {
             $relativePackagePath = Get-RelativePath $RootPath $latestInfo.File.FullName
             $packageDisplayPath = $relativePackagePath ?? $latestInfo.File.FullName
-            Log ("Uninstalling package if present: {0}" -f $config.identity)
-            $uninstallArgs = @("new", "uninstall", $config.identity)
+            Log ("Uninstalling package if present: {0}" -f $PackageId)
+            $uninstallArgs = @("new", "uninstall", $PackageId)
             & dotnet @uninstallArgs | ForEach-Object { Log ("    {0}" -f $_) "White" }
             $uninstallExitCode = $LASTEXITCODE
             if ($uninstallExitCode -eq 0) {
@@ -471,13 +556,13 @@ foreach ($projectDir in $projectDirs | Sort-Object FullName) {
             } elseif ($uninstallExitCode -eq 103) {
                 Log "  Package not previously installed; skipping uninstall." "Green"
             } else {
-                throw ("dotnet new uninstall failed for {0} (exit code {1})." -f $config.identity, $uninstallExitCode)
+                throw ("dotnet new uninstall failed for {0} (exit code {1})." -f $PackageId, $uninstallExitCode)
             }
             Log ("📦 Installing package: {0}" -f $packageDisplayPath)
             $installArgs = @("new", "install", "--force", $latestInfo.File.FullName)
             & dotnet @installArgs | ForEach-Object { Log ("    {0}" -f $_) "White" }
             if ($LASTEXITCODE -ne 0) {
-                throw "dotnet new install failed for $($config.identity)."
+                throw "dotnet new install failed for aggregated package."
             }
             Log "  Package installed." "Green"
         }
