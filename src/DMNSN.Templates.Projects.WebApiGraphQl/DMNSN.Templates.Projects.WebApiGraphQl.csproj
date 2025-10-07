@@ -9,13 +9,13 @@
 		<ApplicationIcon>logo.ico</ApplicationIcon>
 		<Authors>DevilDogTG</Authors>
 		<Company>DevDogs</Company>
-		<Description>REST API web application project template</Description>
+		<Description>GraphQL web application project template powered by HotChocolate</Description>
 		<Copyright>Copyright (c) 2025 DevDogs</Copyright>
 		<PackageIcon>logo.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/DevilDogTG/VisualStudio.ProjectTemplates</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/DevilDogTG/VisualStudio.ProjectTemplates</RepositoryUrl>
-		<PackageTags>dotnet,vsstudio,templates</PackageTags>
+		<PackageTags>dotnet,vsstudio,templates,webapi,graphql,hotchocolate</PackageTags>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 	</PropertyGroup>
 
