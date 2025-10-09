@@ -273,6 +273,33 @@ if (-not $aggregateConfig) {
     $aggregateConfig = [ordered]@{ version = "1.0.0"; packageId = $PackageId; templates = @{} }
 }
 
+# Adopt metadata from templatepack.config.json when provided
+if ($aggregateConfig.packageId -and -not $PSBoundParameters.ContainsKey('PackageId')) {
+    $PackageId = [string]$aggregateConfig.packageId
+}
+if ($aggregateConfig.title -and -not $PSBoundParameters.ContainsKey('PackageTitle')) {
+    $PackageTitle = [string]$aggregateConfig.title
+}
+if ($aggregateConfig.description -and -not $PSBoundParameters.ContainsKey('PackageDescription')) {
+    $PackageDescription = [string]$aggregateConfig.description
+}
+if ($aggregateConfig.projectUrl -and -not $PSBoundParameters.ContainsKey('PackageProjectUrl')) {
+    $PackageProjectUrl = [string]$aggregateConfig.projectUrl
+}
+if ($aggregateConfig.repository) {
+    if ($aggregateConfig.repository.url -and -not $PSBoundParameters.ContainsKey('RepositoryUrl')) {
+        $RepositoryUrl = [string]$aggregateConfig.repository.url
+    }
+    if ($aggregateConfig.repository.type -and -not $PSBoundParameters.ContainsKey('RepositoryType')) {
+        $RepositoryType = [string]$aggregateConfig.repository.type
+    }
+}
+
+# Optional asset file names can be set in config; fall back to common names
+$PackReadmeFile = if ($aggregateConfig.readme) { [string]$aggregateConfig.readme } else { 'README.md' }
+$PackLicenseFile = if ($aggregateConfig.license) { [string]$aggregateConfig.license } else { 'LICENSE' }
+$PackIconFile    = if ($aggregateConfig.icon)    { [string]$aggregateConfig.icon }    else { 'logo.png' }
+
 # Ensure templates map is a hashtable for safe indexing
 if ($aggregateConfig.templates) {
     if (-not ($aggregateConfig.templates -is [hashtable])) {
@@ -577,6 +604,54 @@ if ($NoPack) {
 </Project>
 "@
     Set-Content -Path $templateProjectPath -Value $templateProjectContent -Encoding UTF8
+
+    # Enrich the generated pack project with NuGet metadata and assets
+    try {
+        $rootReadme = Join-Path $RootPath $PackReadmeFile
+        $rootLicense = Join-Path $RootPath $PackLicenseFile
+        $rootIconPng = Join-Path $RootPath $PackIconFile
+
+        $stagedReadme = Join-Path $packStagingRoot $PackReadmeFile
+        $stagedLicense = Join-Path $packStagingRoot $PackLicenseFile
+        $stagedIconPng = Join-Path $packStagingRoot $PackIconFile
+
+        $hasReadme = $false; $hasLicense = $false; $hasIcon = $false
+        if (Test-Path $rootReadme) {
+            Copy-Item -LiteralPath $rootReadme -Destination $stagedReadme -Force
+            $hasReadme = $true
+        } else {
+            $templateListing = if ($templateNames -and $templateNames.Count -gt 0) { "`r`nIncluded templates:`r`n- " + ($templateNames -join "`r`n- ") } else { "" }
+            $readmeContent = "# $PackageId`r`n`r`nTemplate bundle for dotnet new.`r`n$templateListing`r`n`r`nProject URL: $PackageProjectUrl"
+            Set-Content -Path $stagedReadme -Value $readmeContent -Encoding UTF8
+            $hasReadme = $true
+            Log "  Generated minimal README.md for package." "DarkGray"
+        }
+        if (Test-Path $rootLicense) { Copy-Item -LiteralPath $rootLicense -Destination $stagedLicense -Force; $hasLicense = $true }
+        if (Test-Path $rootIconPng) { Copy-Item -LiteralPath $rootIconPng -Destination $stagedIconPng -Force; $hasIcon = $true }
+
+        [xml]$csprojXml = Get-Content -Path $templateProjectPath
+        $pg = $csprojXml.Project.PropertyGroup | Select-Object -First 1
+        if (-not $pg) { $pg = $csprojXml.CreateElement('PropertyGroup'); [void]$csprojXml.Project.AppendChild($pg) }
+        function Add-Prop([string]$name,[string]$value){ if ($value) { $n=$csprojXml.CreateElement($name); $n.InnerText=$value; [void]$pg.AppendChild($n) } }
+        if ($hasReadme) { Add-Prop 'PackageReadmeFile' $PackReadmeFile }
+        if ($hasLicense) { Add-Prop 'PackageLicenseFile' $PackLicenseFile }
+        if ($hasIcon) { Add-Prop 'PackageIcon' $PackIconFile }
+        Add-Prop 'RepositoryUrl' $RepositoryUrl
+        Add-Prop 'RepositoryType' $RepositoryType
+        Add-Prop 'PackageProjectUrl' $PackageProjectUrl
+        Add-Prop 'PackageRequireLicenseAcceptance' 'false'
+
+        $ig = $csprojXml.Project.ItemGroup | Where-Object { $_.None } | Select-Object -First 1
+        if (-not $ig) { $ig = $csprojXml.CreateElement('ItemGroup'); [void]$csprojXml.Project.AppendChild($ig) }
+        function Add-None([string]$include){ $n=$csprojXml.CreateElement('None'); $includeAttr=$csprojXml.CreateAttribute('Include'); $includeAttr.Value=$include; [void]$n.Attributes.Append($includeAttr); $packAttr=$csprojXml.CreateAttribute('Pack'); $packAttr.Value='true'; [void]$n.Attributes.Append($packAttr); $pathAttr=$csprojXml.CreateAttribute('PackagePath'); $pathAttr.Value='/'; [void]$n.Attributes.Append($pathAttr); [void]$ig.AppendChild($n) }
+        if ($hasReadme) { Add-None $PackReadmeFile }
+        if ($hasLicense) { Add-None $PackLicenseFile }
+        if ($hasIcon) { Add-None $PackIconFile }
+
+        $csprojXml.Save($templateProjectPath)
+    } catch {
+        Log ("  WARNING: Failed to enrich NuGet metadata: {0}" -f $_.Exception.Message) "Yellow"
+    }
 
     Log ("🚀 Packing {0} template(s) into {1} v{2}..." -f $selectedTemplateCount, $PackageId, $aggregatedVersion) "Green"
 

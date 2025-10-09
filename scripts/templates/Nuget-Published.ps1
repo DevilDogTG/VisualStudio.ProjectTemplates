@@ -96,5 +96,5 @@ Write-Host "Step 4: Summary"
 Write-Host ".. Exported package: $($exportedPackage.FullName)"
 Write-Host ".. Tagged version: $tagName"
 Write-Host ".. Pushed to NuGet source: $nugetSource"
-Write-Host "NuGet package publishing process completed successfully."s
+Write-Host "NuGet package publishing process completed successfully."
 # End of script

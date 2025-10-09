@@ -1,6 +1,16 @@
 {
   "version": "8.0.1",
   "packageId": "DMNSN.ProjectTemplates",
+  "title": "DMNSN Project Templates",
+  "description": "Collection of DMNSN .NET project templates for dotnet new and Visual Studio.",
+  "projectUrl": "https://github.com/DevilDogTG/VisualStudio.ProjectTemplates",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DevilDogTG/VisualStudio.ProjectTemplates"
+  },
+  "readme": "README.md",
+  "license": "LICENSE",
+  "icon": "logo.png",
   "templates": {
     "DMNSN.WorkerApp.CSharp": {
       "hash": "f157d8063d5a9bc26b2ab43d1a4e9f6c94b2f594511971a5f6a8b3a298ad4c48"
