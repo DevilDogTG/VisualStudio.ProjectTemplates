@@ -15,7 +15,7 @@ param (
     # If set, push the commit to the current upstream after committing
     [switch]$AutoPush = $false,
     # Optional commit message. Supports placeholders: {version}, {tag}
-    [string]$CommitMessage
+    [string]$CommitMessage = "chore: automatic export {tag} with version {version}"
 )
 
 # Stop on errors
