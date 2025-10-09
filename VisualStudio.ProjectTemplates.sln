@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMNSN.Templates.Projects.We
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMNSN.Templates.Projects.Library", "src\DMNSN.Templates.Projects.Library\DMNSN.Templates.Projects.Library.csproj", "{F77858AA-D7B8-43D9-8AFF-5FF371918232}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DMNSN.Templates.Projects.WebApiGraphQl", "src\DMNSN.Templates.Projects.WebApiGraphQl\DMNSN.Templates.Projects.WebApiGraphQl.csproj", "{8046A9C3-5AAD-4E5B-95BA-2A927B639FAE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{F77858AA-D7B8-43D9-8AFF-5FF371918232}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F77858AA-D7B8-43D9-8AFF-5FF371918232}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F77858AA-D7B8-43D9-8AFF-5FF371918232}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8046A9C3-5AAD-4E5B-95BA-2A927B639FAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8046A9C3-5AAD-4E5B-95BA-2A927B639FAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8046A9C3-5AAD-4E5B-95BA-2A927B639FAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8046A9C3-5AAD-4E5B-95BA-2A927B639FAE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

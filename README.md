@@ -34,8 +34,9 @@ All templates target .NET 8.0 and embrace a database-first pattern backed by SQL
 
 1. Export the templates by using:
 	```powershell
-	.\scripts\templates\Export-DotnetCliTemplate.ps1 -All
+	.\scripts\templates\Export-DotnetCliTemplate.ps1
 	```
+	- By default, all templates under `src` are exported.
 	- Use `-Projects "ConsoleApp","Library"` to export specific templates.
 	- Add `-DryRun` to preview changes or `-LogPath` to specify a custom log file.
 2. Use the generated `.nupkg` files in `artifacts` to install or update the templates for `dotnet new`.
@@ -63,10 +64,10 @@ dotnet new uninstall DMNSN.ConsoleApp.CSharp
 
 The export script lives at `scripts/templates/Export-DotnetCliTemplate.ps1` and builds `.nupkg` packages for `dotnet new install`.
 
-- Export every template and create packages in `artifacts`:
-
+- Export every template and create packages in `artifacts` (default):
+  
   ```powershell
-  .\scripts\templates\Export-DotnetCliTemplate.ps1 -All
+  .\scripts\templates\Export-DotnetCliTemplate.ps1
   ```
 
 - Export specific templates (case-insensitive; partial names allowed):
@@ -75,10 +76,10 @@ The export script lives at `scripts/templates/Export-DotnetCliTemplate.ps1` and 
   .\scripts\templates\Export-DotnetCliTemplate.ps1 -Projects "ConsoleApp","WebApiRest"
   ```
 
-- Set an explicit package version for the templates you export:
-
+- Set an explicit aggregate package version for the bundle:
+  
   ```powershell
-  .\scripts\templates\Export-DotnetCliTemplate.ps1 -All -Version 8.0.2
+  .\scripts\templates\Export-DotnetCliTemplate.ps1 -Version 8.0.2
   ```
 
 - Preview what would be produced without writing files or packing:
@@ -97,10 +98,12 @@ Additional switches:
 - `-TemplatesPath` overrides the staging folder for generated templates (defaults to `output`).
 - `-PackagesPath` controls where `.nupkg` files are written (defaults to `artifacts`).
 - `-LogPath` writes the detailed log to a specific location; otherwise a timestamped file is placed under `logs`.
+ - `-AggregateConfigPath` path to the running version config (defaults to `templatepack.config.json`).
 
 Notes:
 - Output templates are staged under `output` before packing. Older staged content for the same template is replaced each run.
 - `.template.hash` files still track content changes in the source projects (skipped during `-DryRun`).
+- The script maintains a running bundle version in `templatepack.config.json`; it bumps the patch version automatically if any selected template content changed since the last run. Use `-Version` to override explicitly.
 - If `logo.ico` or `preview.png` exist at the repository root, they are bundled automatically as `__TemplateIcon.ico` and `__TemplatePreview.png`.
 
 ## Template configuration

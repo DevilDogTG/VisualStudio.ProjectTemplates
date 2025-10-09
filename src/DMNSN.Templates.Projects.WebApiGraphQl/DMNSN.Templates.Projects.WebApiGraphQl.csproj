@@ -1,0 +1,66 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Version>8.0.0</Version>
+		<Copyright>Copyright 2025 @ DevDogs</Copyright>
+		<ApplicationIcon>logo.ico</ApplicationIcon>
+		<Authors>DevilDogTG</Authors>
+		<Company>DevDogs</Company>
+		<Description>GraphQL web application project template powered by HotChocolate</Description>
+		<Copyright>Copyright (c) 2025 DevDogs</Copyright>
+		<PackageIcon>logo.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageProjectUrl>https://github.com/DevilDogTG/VisualStudio.ProjectTemplates</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/DevilDogTG/VisualStudio.ProjectTemplates</RepositoryUrl>
+		<PackageTags>dotnet,vsstudio,templates,webapi,graphql,hotchocolate</PackageTags>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Remove="logsettings.json" />
+		<Content Remove="template.config.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="logo.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="logsettings.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Include="LICENSE">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="logo.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DMNSN.AspNetCore.Middlewares.CorrelationId" Version="8.0.3" />
+		<PackageReference Include="DMNSN.Core" Version="8.0.1" />
+		<PackageReference Include="HotChocolate" Version="15.1.10" />
+		<PackageReference Include="HotChocolate.AspNetCore" Version="15.1.10" />
+		<PackageReference Include="HotChocolate.Utilities" Version="15.1.10" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+		<PackageReference Include="NUlid" Version="1.7.3" />
+		<PackageReference Include="Serilog" Version="4.3.0" />
+		<PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
+		<PackageReference Include="Serilog.Enrichers.AspNetCore.RequestHeader" Version="1.0.3" />
+		<PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+	</ItemGroup>
+
+</Project>
