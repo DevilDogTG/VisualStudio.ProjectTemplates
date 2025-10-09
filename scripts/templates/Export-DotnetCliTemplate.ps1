@@ -1,6 +1,5 @@
 param (
     [string[]]$Projects,
-    [switch]$All,
     [string]$Version,
     [switch]$DryRun,
     [switch]$NoPack,
@@ -10,7 +9,8 @@ param (
     [string]$LogPath,
     [string]$PackageId = "DMNSN.ProjectTemplates",
     [string]$PackageTitle,
-    [string]$PackageDescription
+    [string]$PackageDescription,
+    [string]$AggregateConfigPath = "templatepack.config.json"
 )
 
 $ErrorActionPreference = "Stop"
@@ -87,9 +87,7 @@ if (-not (Test-Path $srcPath)) {
     throw "Unable to locate src directory at $srcPath"
 }
 
-if (-not $All -and (-not $Projects -or $Projects.Count -eq 0)) {
-    throw "Specify -All or provide one or more project names with -Projects."
-}
+## Default behavior: if -Projects is omitted, all templates are processed.
 
 function Resolve-RootedPath {
     param (
@@ -207,10 +205,6 @@ function Add-ProjectDir {
     }
 }
 
-if ($All) {
-    Get-ChildItem -Path $srcPath -Directory | ForEach-Object { Add-ProjectDir $_.FullName }
-}
-
 if ($Projects) {
     foreach ($proj in $Projects) {
         Add-ProjectDir $proj
@@ -218,9 +212,10 @@ if ($Projects) {
 }
 
 if ($projectDirs.Count -eq 0) {
-    Log "No projects selected. Nothing to do." "Yellow"
-    return
+    # No -Projects specified; include all projects by default
+    Get-ChildItem -Path $srcPath -Directory | ForEach-Object { Add-ProjectDir $_.FullName }
 }
+
 
 $templateSummaries = New-Object System.Collections.Generic.List[pscustomobject]
 $aggregateTags = New-Object System.Collections.Generic.HashSet[string]([StringComparer]::OrdinalIgnoreCase)
@@ -231,6 +226,66 @@ $aggregateAuthors = New-Object System.Collections.Generic.HashSet[string]([Strin
 $excludedDirectories = @("bin", "obj", "logs", ".vs", ".git", "artifacts", "TestResults")
 $excludedFileNames = @(".template.hash", "template.config.json")
 $excludedExtensions = @(".user")
+
+# Compute project content hash for change detection (aggregate version bumping)
+function Get-ProjectContentHash {
+    param([string]$ProjectPath)
+
+    $excludedDirs = @("bin", "obj", "logs", ".vs", ".git", "artifacts", "TestResults")
+    $excludedNames = @("template.config.json", ".template.hash")
+    $excludedExts = @(".zip", ".vstemplate", ".user", ".suo")
+
+    $files = Get-ChildItem -Path $ProjectPath -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
+        $relativePath = Get-RelativePath $ProjectPath $_.FullName
+        if (-not $relativePath) { return $false }
+        $parts = $relativePath -split "[\\/]"
+        $inExcludedDir = ($parts | Where-Object { $excludedDirs -contains $_ }).Count -gt 0
+        $isExcludedName = $excludedNames -contains $_.Name
+        $isExcludedExt = $excludedExts -contains ($_.Extension.ToLower())
+        -not ($inExcludedDir -or $isExcludedName -or $isExcludedExt)
+    }
+
+    $hashEntries = @()
+    foreach ($file in ($files | Sort-Object FullName)) {
+        $content = Get-Content -Path $file.FullName -Raw -ErrorAction SilentlyContinue
+        if ($null -eq $content) { $content = "" }
+        $normalized = ($content -replace "`r`n", "`n") -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
+        $normalizedText = ($normalized -join "`n")
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($normalizedText)
+        $fileHashBytes = [System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
+        $fileHash = [System.BitConverter]::ToString($fileHashBytes).Replace('-', '').ToLower()
+        $rel = (Get-RelativePath $ProjectPath $file.FullName).Replace('\\','/').ToLower()
+        $hashEntries += "${rel}:${fileHash}"
+    }
+
+    $combined = [System.Text.Encoding]::UTF8.GetBytes(($hashEntries -join "`n"))
+    $finalBytes = [System.Security.Cryptography.SHA256]::Create().ComputeHash($combined)
+    return [System.BitConverter]::ToString($finalBytes).Replace('-', '').ToLower()
+}
+
+# Load aggregate config (running version + per-template hash)
+$aggregateConfigFullPath = Resolve-RootedPath -Base $RootPath -PathValue $AggregateConfigPath
+$aggregateConfig = $null
+if (Test-Path $aggregateConfigFullPath) {
+    try { $aggregateConfig = Get-Content -Path $aggregateConfigFullPath -Raw | ConvertFrom-Json } catch { $aggregateConfig = $null }
+}
+if (-not $aggregateConfig) {
+    $aggregateConfig = [ordered]@{ version = "1.0.0"; packageId = $PackageId; templates = @{} }
+}
+
+# Ensure templates map is a hashtable for safe indexing
+if ($aggregateConfig.templates) {
+    if (-not ($aggregateConfig.templates -is [hashtable])) {
+        $t = @{}
+        foreach ($p in $aggregateConfig.templates.PSObject.Properties) { $t[$p.Name] = $p.Value }
+        $aggregateConfig.templates = $t
+    }
+} else {
+    $aggregateConfig.templates = @{}
+}
+
+$anyTemplateChanged = $false
+$currentHashes = @{}
 
 foreach ($projectDir in $projectDirs | Sort-Object FullName) {
     $projectPath = $projectDir.FullName
@@ -248,7 +303,7 @@ foreach ($projectDir in $projectDirs | Sort-Object FullName) {
     if (-not $config.identity) { throw "Missing identity in $configPath" }
     if (-not $config.shortName) { throw "Missing shortName in $configPath" }
 
-    $packageVersion = if ($Version) { $Version } elseif ($config.version) { $config.version } else { "1.0.0" }
+    $packageVersion = if ($config.version) { $config.version } else { "1.0.0" }
     $language = Map-LanguageTag $config.languageTag
 
     $classifications = New-Object System.Collections.Generic.List[string]
@@ -396,6 +451,17 @@ foreach ($projectDir in $projectDirs | Sort-Object FullName) {
         $null = $aggregateAuthors.Add([string]$config.author)
     }
 
+    # Track content hash for aggregate version bump logic
+    $currentHash = Get-ProjectContentHash -ProjectPath $projectPath
+    $currentHashes[$config.identity] = $currentHash
+    $previousHash = $null
+    if ($aggregateConfig.templates.ContainsKey($config.identity)) {
+        $previousHash = $aggregateConfig.templates[$config.identity].hash
+    }
+    if (-not $previousHash -or $previousHash -ne $currentHash) {
+        $anyTemplateChanged = $true
+    }
+
     [void]$templateSummaries.Add([pscustomobject]@{
         ProjectName = $projectName
         Identity = $config.identity
@@ -415,26 +481,23 @@ if ($selectedTemplateCount -eq 0) {
 $sortedTemplateSummaries = $templateSummaries | Sort-Object -Property @{ Expression = { $_.TemplateName }; Ascending = $true }, @{ Expression = { $_.ProjectName }; Ascending = $true }
 $templateNames = @($sortedTemplateSummaries | ForEach-Object { $_.TemplateName } | Where-Object { $_ })
 
-$versionCandidates = @()
-foreach ($summary in $sortedTemplateSummaries) {
-    $versionText = $summary.PackageVersion
-    if ([string]::IsNullOrWhiteSpace($versionText)) { continue }
-    $parsedVersion = $null
-    $hasVersion = [System.Version]::TryParse($versionText, [ref]$parsedVersion)
-    $versionCandidates += [pscustomobject]@{
-        VersionText = $versionText
-        Version = $parsedVersion
-        HasVersion = $hasVersion
-    }
-}
-
-$aggregatedVersion = if ($Version) {
-    $Version
-} elseif ($versionCandidates.Count -gt 0) {
-    $orderedVersions = $versionCandidates | Sort-Object -Property @{ Expression = { $_.HasVersion }; Descending = $true }, @{ Expression = { $_.Version }; Descending = $true }, @{ Expression = { $_.VersionText }; Descending = $true }
-    $orderedVersions[0].VersionText
+# Determine aggregated package version using running config
+$currentAggregateVersion = if ($aggregateConfig.version) { [string]$aggregateConfig.version } else { "1.0.0" }
+if ($Version) {
+    $aggregatedVersion = $Version
+    Log ("?? Aggregate package version (override): {0}" -f $aggregatedVersion)
 } else {
-    "1.0.0"
+    if ($anyTemplateChanged) {
+        # bump patch version
+        $vparts = ($currentAggregateVersion -split '\.')
+        if ($vparts.Length -lt 3) { $vparts = @($vparts + (0..(2 - $vparts.Length) | ForEach-Object { '0' })) }
+        $vparts[2] = [int]$vparts[2] + 1
+        $aggregatedVersion = "{0}.{1}.{2}" -f $vparts[0], $vparts[1], $vparts[2]
+        Log ("?? Aggregate version bumped: {0} -> {1}" -f $currentAggregateVersion, $aggregatedVersion) "Green"
+    } else {
+        $aggregatedVersion = $currentAggregateVersion
+        Log ("?? Aggregate version unchanged: {0}" -f $aggregatedVersion) "DarkGray"
+    }
 }
 
 $aggregateAuthorsList = if ($aggregateAuthors.Count -gt 0) { @($aggregateAuthors) | Sort-Object -Unique } else { @("Unknown") }
@@ -567,6 +630,29 @@ if ($NoPack) {
             Log "  Package installed." "Green"
         }
     }
+}
+
+# Persist aggregate config (version + per-template hashes)
+try {
+    $aggregateConfig.packageId = $PackageId
+    $aggregateConfig.version = $aggregatedVersion
+    if (-not $aggregateConfig.templates) { $aggregateConfig.templates = @{} }
+    foreach ($summary in $sortedTemplateSummaries) {
+        $id = $summary.Identity
+        if ($id -and $currentHashes.ContainsKey($id)) {
+            $aggregateConfig.templates[$id] = @{ hash = $currentHashes[$id] }
+        }
+    }
+    if (-not $DryRun) {
+        $cfgDir = Split-Path -Parent $aggregateConfigFullPath
+        if ($cfgDir -and -not (Test-Path $cfgDir)) { New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null }
+        ($aggregateConfig | ConvertTo-Json -Depth 10) | Set-Content -Path $aggregateConfigFullPath -Encoding UTF8
+        Log ("Saved aggregate config: {0}" -f $aggregateConfigFullPath) "DarkGray"
+    } else {
+        Log ("Dry run: would save aggregate config to {0}" -f $aggregateConfigFullPath) "DarkGray"
+    }
+} catch {
+    Log ("Failed to persist aggregate config: {0}" -f $_.Exception.Message) "Yellow"
 }
 
 Log "Export complete." "White"

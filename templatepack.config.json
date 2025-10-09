@@ -1,0 +1,21 @@
+{
+  "version": "8.0.1",
+  "packageId": "DMNSN.ProjectTemplates",
+  "templates": {
+    "DMNSN.ClassLibrary.CSharp": {
+      "hash": "38021b170d4b5a7859cc545e17572cf961a46f97a3938582fc50ba8968021746"
+    },
+    "DMNSN.WebApi.Rest.CSharp": {
+      "hash": "2dc428c9b158902aad1a00bfe283d5bc33b99b5ad3e32fe9b5e01556947cee6a"
+    },
+    "DMNSN.ConsoleApp.CSharp": {
+      "hash": "67c3e9604c2b40f4057719220be1f06de612995a8d5e0e97df3913662f7c92ce"
+    },
+    "DMNSN.WebApi.GraphQl.CSharp": {
+      "hash": "d91cb6b306962ee8008402f307fb4115938182e32839d56bbfe51b0b96250c96"
+    },
+    "DMNSN.WorkerApp.CSharp": {
+      "hash": "f157d8063d5a9bc26b2ab43d1a4e9f6c94b2f594511971a5f6a8b3a298ad4c48"
+    }
+  }
+}
