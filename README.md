@@ -60,51 +60,73 @@ dotnet new uninstall DMNSN.ConsoleApp.CSharp
 - `dotnet new list DMNSN` shows all installed DMNSN templates; the `Identity` column is the value for `dotnet new uninstall`.
 - Each `src/DMNSN.Templates.Projects.*` folder contains a `template.config.json` with an `identity` property that matches the uninstall name.
 
-## Export script usage (parameters and examples)
+## Scripts for Template Management
 
-The export script lives at `scripts/templates/Export-DotnetCliTemplate.ps1` and builds `.nupkg` packages for `dotnet new install`.
+This project includes PowerShell scripts to automate template creation, packaging, and publishing for `dotnet new`.
 
-- Export every template and create packages in `artifacts` (default):
-  
+### 1. Exporting and Packing (`Export-DotnetCliTemplate.ps1`)
+
+This is the primary script for creating a `.nupkg` template package from the source projects. It reads `template.config.json` from each project, generates `template.json` files, and bundles them into a NuGet package.
+
+**Common Usage:**
+
+- **Export all templates:**
   ```powershell
   .\scripts\templates\Export-DotnetCliTemplate.ps1
   ```
 
-- Export specific templates (case-insensitive; partial names allowed):
-
+- **Export specific templates:**
   ```powershell
-  .\scripts\templates\Export-DotnetCliTemplate.ps1 -Projects "ConsoleApp","WebApiRest"
+  .\scripts\templates\Export-DotnetCliTemplate.ps1 -Projects "ConsoleApp", "WebApiRest"
   ```
 
-- Set an explicit aggregate package version for the bundle:
-  
+- **Set a specific package version:**
   ```powershell
-  .\scripts\templates\Export-DotnetCliTemplate.ps1 -Version 8.0.2
+  .\scripts\templates\Export-DotnetCliTemplate.ps1 -Version 1.2.3
   ```
 
-- Preview what would be produced without writing files or packing:
-
+- **Preview changes without writing files:**
   ```powershell
-  .\scripts\templates\Export-DotnetCliTemplate.ps1 -Projects "Library" -DryRun
+  .\scripts\templates\Export-DotnetCliTemplate.ps1 -DryRun
   ```
 
-- Skip building `.nupkg` files (useful when you only need the transformed template folder):
+**Key Parameters:**
+- `-Projects <string[]>`: A list of project names to export (e.g., "ConsoleApp"). If omitted, all projects in `src` are exported.
+- `-Version <string>`: Overrides the auto-incremented package version.
+- `-DryRun`: Shows what would happen without actually creating files.
+- `-NoPack`: Prepares the template folders in `output` but stops before creating a `.nupkg`.
+- `-InstallLatestPackage`: After creating the package, it uninstalls any existing version and installs the new one.
+- `-TemplatesPath <string>`: Overrides the staging folder for generated templates (default: `output`).
+- `-PackagesPath <string>`: Controls where `.nupkg` files are written (default: `artifacts`).
+- `-AggregateConfigPath <string>`: Path to the running version config (default: `templatepack.config.json`).
+- `-LogPath <string>`: Specifies a path for the log file.
 
+### 2. Publishing to NuGet (`Nuget-Published.ps1`)
+
+This script automates the entire release process for the `dotnet new` template pack. It runs the export script, commits version changes, creates a git tag, and pushes the package to NuGet.
+
+**Common Usage:**
+
+- **Export, tag, and push to NuGet (requires `NUGET_API_KEY` env var):**
   ```powershell
-  .\scripts\templates\Export-DotnetCliTemplate.ps1 -Projects "ConsoleApp" -NoPack
+  .\scripts\templates\Nuget-Published.ps1
   ```
 
-Additional switches:
-- `-TemplatesPath` overrides the staging folder for generated templates (defaults to `output`).
-- `-PackagesPath` controls where `.nupkg` files are written (defaults to `artifacts`).
-- `-LogPath` writes the detailed log to a specific location; otherwise a timestamped file is placed under `logs`.
- - `-AggregateConfigPath` path to the running version config (defaults to `templatepack.config.json`).
+- **Only export the package, without tagging or pushing:**
+  ```powershell
+  .\scripts\templates\Nuget-Published.ps1 -ExportOnly
+  ```
 
-Notes:
-- Output templates are staged under `output` before packing. Older staged content for the same template is replaced each run.
-- `.template.hash` files still track content changes in the source projects (skipped during `-DryRun`).
-- The script maintains a running bundle version in `templatepack.config.json`; it bumps the patch version automatically if any selected template content changed since the last run. Use `-Version` to override explicitly.
-- If `logo.ico` or `preview.png` exist at the repository root, they are bundled automatically as `__TemplateIcon.ico` and `__TemplatePreview.png`.
+- **Export and automatically commit/push version changes:**
+  ```powershell
+  .\scripts\templates\Nuget-Published.ps1 -AutoCommit -AutoPush
+  ```
+
+**Key Parameters:**
+- `-ExportOnly`: Runs the export process but skips git tagging and NuGet push.
+- `-AutoCommit`: Automatically commits changes to `templatepack.config.json` if the version was bumped.
+- `-AutoPush`: Pushes the auto-commit to the remote repository.
+- `-CommitMessage <string>`: A custom commit message (placeholders `{version}` and `{tag}` are available).
 
 ## Template configuration
 
