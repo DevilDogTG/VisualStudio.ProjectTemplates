@@ -30,6 +30,6 @@
     "dependency-injection",
     "configuration"
   ],
-  "templateGroupIdentity": "DMNSN.Templates.Web",
+  "templateGroupIdentity": "DMNSN.Templates.Web.Rest",
   "version": "8.0.1"
 }
