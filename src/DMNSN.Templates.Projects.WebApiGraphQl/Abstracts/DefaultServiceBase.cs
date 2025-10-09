@@ -6,21 +6,16 @@ namespace DMNSN.Templates.Projects.WebApiGraphQl.Abstracts;
 /// <summary>
 /// Base class for web services (GraphQL).
 /// </summary>
-public abstract class BaseWebService
+/// <remarks>
+/// Initializes a new instance of the <see cref="DefaultServiceBase" /> class.
+/// </remarks>
+/// <param name="httpAccessor">The HTTP accessor.</param>
+/// <param name="config">The configuration.</param>
+public abstract class DefaultServiceBase(
+    IHttpContextAccessor httpAccessor,
+    AppSettings config)
 {
-    protected readonly string _correlationID;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BaseWebService" /> class.
-    /// </summary>
-    /// <param name="httpAccessor">The HTTP accessor.</param>
-    /// <param name="config">The configuration.</param>
-    protected BaseWebService(
-        IHttpContextAccessor httpAccessor,
-        AppSettings config)
-    {
-        _correlationID = (string?)httpAccessor.HttpContext?.Request.Headers[config.CorrelationKey] ?? "";
-    }
+    protected readonly string _correlationID = (string?)httpAccessor.HttpContext?.Request.Headers[config.CorrelationKey] ?? "";
 
     /// <summary>
     /// Gets the version.

@@ -9,7 +9,7 @@ namespace DMNSN.Templates.Projects.WebApiGraphQl.Services;
 /// <summary>
 /// Example service class.
 /// </summary>
-public class ExampleService : BaseWebService, IExampleService
+public class ExampleService : DefaultServiceBase, IExampleService
 {
     private readonly ILogger<ExampleService> _logger;
     private AppSettings _options;

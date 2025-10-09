@@ -31,9 +31,7 @@ public abstract class DefaultControllerBase : ControllerBase
         _httpContextAccessor = httpContextAccessor;
         _config = config.CurrentValue;
         config.OnChange(newValues => _config = newValues);
-        if (_httpContextAccessor.HttpContext != null)
-        { correlationID = (string?)_httpContextAccessor.HttpContext.Request.Headers[_config.CorrelationKey] ?? ""; }
-        else { correlationID = ""; }
+        correlationID = (string?)_httpContextAccessor.HttpContext?.Request.Headers[_config.CorrelationKey] ?? "";
     }
 
     /// <summary>

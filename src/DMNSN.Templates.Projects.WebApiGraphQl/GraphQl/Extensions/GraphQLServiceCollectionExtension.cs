@@ -61,6 +61,7 @@ public static class GraphQlServiceCollectionExtension
             .AddGraphQLServer(schemaName: option.Name)
             .AddQueryType<QueryType>()
             .AddMutationType<MutationType>()
+            .AddType<UlidType>()
             .DisableIntrospection(option.DisableIntrospection);
 
         // Return the collection
