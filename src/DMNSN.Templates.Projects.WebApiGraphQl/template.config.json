@@ -9,14 +9,14 @@
   "languageTag": "csharp",
   "platformTag": "windows",
   "locationField": "Enabled",
-  "maxFrameworkVersion": "8.0",
+  "maxFrameworkVersion": "10.0",
   "name": "DMNSN Web API (GraphQL)",
   "identity": "DMNSN.WebApi.GraphQl.CSharp",
   "shortName": "dmnsn-webapi-graphql",
   "projectType": "CSharp",
   "projectTypeTag": "webapi",
   "provideDefaultName": true,
-  "requiredFrameworkVersion": "8.0",
+  "requiredFrameworkVersion": "10.0",
   "sortOrder": 800,
   "supportedLanguages": [
     "C#"
@@ -32,5 +32,5 @@
     "configuration"
   ],
   "templateGroupIdentity": "DMNSN.Templates.Web.GraphQL",
-  "version": "8.0.1"
+  "version": "10.0.0"
 }

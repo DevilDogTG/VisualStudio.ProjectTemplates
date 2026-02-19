@@ -9,14 +9,14 @@
   "languageTag": "csharp",
   "platformTag": "any",
   "locationField": "Enabled",
-  "maxFrameworkVersion": "8.0",
+  "maxFrameworkVersion": "10.0",
   "name": "DMNSN Class Library",
   "identity": "DMNSN.ClassLibrary.CSharp",
   "shortName": "dmnsn-lib",
   "projectType": "CSharp",
   "projectTypeTag": "classlib",
   "provideDefaultName": true,
-  "requiredFrameworkVersion": "8.0",
+  "requiredFrameworkVersion": "10.0",
   "sortOrder": 1000,
   "supportedLanguages": [
     "C#"
@@ -26,5 +26,5 @@
     "class-library"
   ],
   "templateGroupIdentity": "DMNSN.Templates.Libraries",
-  "version": "8.0.2"
+  "version": "10.0.0"
 }

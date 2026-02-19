@@ -9,14 +9,14 @@
   "languageTag": "csharp",
   "platformTag": "windows",
   "locationField": "Enabled",
-  "maxFrameworkVersion": "8.0",
+  "maxFrameworkVersion": "10.0",
   "name": "DMNSN Console Application",
   "identity": "DMNSN.ConsoleApp.CSharp",
   "shortName": "dmnsn-console",
   "projectType": "CSharp",
   "projectTypeTag": "console",
   "provideDefaultName": true,
-  "requiredFrameworkVersion": "8.0",
+  "requiredFrameworkVersion": "10.0",
   "sortOrder": 1000,
   "supportedLanguages": [
     "C#"
@@ -29,5 +29,5 @@
     "configuration"
   ],
   "templateGroupIdentity": "DMNSN.Templates.Applications",
-  "version": "8.0.1"
+  "version": "10.0.0"
 }
