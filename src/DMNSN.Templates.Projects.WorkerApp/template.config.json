@@ -8,7 +8,7 @@
   "enableLocationBrowseButton": true,
   "languageTag": "csharp",
   "locationField": "Enabled",
-  "maxFrameworkVersion": "8.0",
+  "maxFrameworkVersion": "10.0",
   "name": "DMNSN Worker Service",
   "identity": "DMNSN.WorkerApp.CSharp",
   "shortName": "dmnsn-worker",
@@ -16,7 +16,7 @@
   "projectType": "CSharp",
   "projectTypeTag": "service",
   "provideDefaultName": true,
-  "requiredFrameworkVersion": "8.0",
+  "requiredFrameworkVersion": "10.0",
   "sortOrder": 900,
   "supportedLanguages": [
     "C#"
@@ -29,5 +29,5 @@
     "dependency-injection"
   ],
   "templateGroupIdentity": "DMNSN.Templates.Workloads",
-  "version": "8.0.1"
+  "version": "10.0.0"
 }
