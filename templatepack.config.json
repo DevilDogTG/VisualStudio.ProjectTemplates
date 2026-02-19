@@ -21,11 +21,11 @@
     "DMNSN.WebApi.GraphQl.CSharp": {
       "hash": "fc9bb3a541618d3332d887d5bc035a90dac23ddcdd7a1308b2f01b68caae2cd9"
     },
-    "DMNSN.WebApi.Rest.CSharp": {
-      "hash": "b78c317173ce6a933792ce1f66a4b35a3d7e460fe3adfbbc8f73d29f64cb792a"
-    },
     "DMNSN.ClassLibrary.CSharp": {
       "hash": "fd4b32396e05363831d6a4a3ef49b72674f55b4568eb75a51751f872f5c9311b"
+    },
+    "DMNSN.WebApi.Rest.CSharp": {
+      "hash": "b78c317173ce6a933792ce1f66a4b35a3d7e460fe3adfbbc8f73d29f64cb792a"
     }
   }
 }
