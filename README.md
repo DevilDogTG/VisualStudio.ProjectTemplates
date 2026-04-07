@@ -143,9 +143,8 @@ What it does:
 
 After the PR is merged, the **GitHub Actions** workflow (`.github/workflows/publish-release.yml`) automatically:
 - Tags `v{version}` and pushes the tag.
+- Merges `main` back into `develop`.
 - Packs and publishes `DMNSN.ProjectTemplates.{version}.nupkg` to NuGet.org.
-
-> **Prerequisite:** Add a `NUGET_API_KEY` secret to the repository settings for the Actions workflow to use.
 
 **Key Parameters:**
 - `-Mode <develop|release>`: Required. Selects the publish mode.
@@ -153,6 +152,78 @@ After the PR is merged, the **GitHub Actions** workflow (`.github/workflows/publ
 - `-Version <string>`: Override the computed version in either mode.
 - `-CommitMessage <string>`: Custom release-branch commit message. Supports `{version}` and `{tag}`.
 - `-PrTitle <string>`: Custom PR title (release mode).
+
+## GitHub Actions — Secrets setup
+
+Two repository secrets are required for the automated release workflows.
+
+### Step 1 — Add `NUGET_API_KEY`
+
+This key is used by `publish-release.yml` to push the `.nupkg` to NuGet.org.
+
+1. Go to [nuget.org](https://www.nuget.org/) → sign in → click your avatar → **API Keys**.
+2. Click **Create** and configure:
+   - **Key name**: e.g. `github-actions-dmnsn`
+   - **Expiration**: choose a suitable duration (max 365 days)
+   - **Glob pattern**: `DMNSN.ProjectTemplates*`
+   - **Packages**: select **Push new packages and package versions**
+3. Click **Create** and **copy the key immediately** (it won't be shown again).
+4. In this GitHub repository go to **Settings → Secrets and variables → Actions → New repository secret**:
+   - **Name**: `NUGET_API_KEY`
+   - **Secret**: paste the key from step 3.
+
+### Step 2 — Add `GH_PAT`
+
+A Personal Access Token is required for two things:
+- **`release-gate.yml`**: auto-merging the PR — merges made with `GITHUB_TOKEN` do **not** fire subsequent workflow runs, so a PAT is essential to trigger `publish-release.yml`.
+- **`publish-release.yml`**: pushing the merged-back commit to `develop` (needed if the branch has protection rules).
+
+#### Create the PAT (Fine-grained, recommended)
+
+1. Go to [github.com/settings/tokens](https://github.com/settings/tokens) → **Fine-grained tokens** → **Generate new token**.
+2. Configure:
+   - **Token name**: e.g. `dmnsn-release-automation`
+   - **Expiration**: choose a duration (e.g. 1 year)
+   - **Repository access**: only this repository (`VisualStudio.ProjectTemplates`)
+   - **Repository permissions**:
+     | Permission | Access |
+     |---|---|
+     | Contents | Read and write |
+     | Pull requests | Read and write |
+     | Metadata | Read (auto-selected) |
+3. Click **Generate token** and **copy it immediately**.
+4. In the repository go to **Settings → Secrets and variables → Actions → New repository secret**:
+   - **Name**: `GH_PAT`
+   - **Secret**: paste the token.
+
+### Verification
+
+Once both secrets are set, navigate to **Settings → Secrets and variables → Actions** and confirm both `NUGET_API_KEY` and `GH_PAT` appear in the repository secrets list.
+
+### Workflow overview
+
+```
+developer runs:  Nuget-Published.ps1 -Mode release
+                         │
+                         ▼
+            Creates release-{version} branch
+            Generates CHANGELOG.md entry
+            Opens PR  release-{version} → main
+                         │
+              reviewer approves the PR
+                         │
+                         ▼
+         [release-gate.yml] triggered
+            ✓ conflict check with develop
+            ✓ auto-merges PR → main  (uses GH_PAT)
+                         │
+                         ▼
+         [publish-release.yml] triggered
+            ✓ export & pack .nupkg
+            ✓ git tag v{version}
+            ✓ merge main → develop
+            ✓ dotnet nuget push
+```
 
 ## Template configuration
 

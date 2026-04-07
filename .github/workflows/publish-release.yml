@@ -1,7 +1,17 @@
 name: Publish Release
 
-# Triggered when a release-* PR is merged into main.
-# Steps: extract version → export package → tag → push to NuGet.
+# Triggered when a release-* PR is merged into main (by the Release Gate workflow).
+# Steps:
+#   1. Extract version from branch name.
+#   2. Export & pack the template bundle.
+#   3. Tag the release version and push.
+#   4. Merge main back into develop.
+#   5. Publish .nupkg to NuGet.org.
+#
+# Required secrets:
+#   NUGET_API_KEY  — NuGet.org API key  (see README § Secrets setup)
+#   GH_PAT         — GitHub PAT with contents:write + pull-requests:write
+#                    (needed to push to protected branches; falls back to GITHUB_TOKEN)
 on:
   pull_request:
     types: [closed]
@@ -10,25 +20,28 @@ on:
 
 jobs:
   publish:
-    name: Tag & Publish to NuGet
+    name: Tag, Merge Back & Publish to NuGet
     # Only run when the PR was actually merged and came from a release branch.
     if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release-')
     runs-on: windows-latest
     permissions:
-      contents: write   # push git tag
+      contents: write   # push tag + push develop
 
     steps:
-      - name: Checkout
+      - name: Checkout (full history)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # Prefer GH_PAT so pushes to protected branches succeed.
+          # Falls back to GITHUB_TOKEN when GH_PAT is not configured.
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.x'
 
+      # ── Extract release metadata ──────────────────────────────────────────────
       - name: Extract version from branch name
         id: version
         shell: pwsh
@@ -39,11 +52,13 @@ jobs:
           "tag=v$version"    | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Release version: $version"
 
+      # ── Export & pack ─────────────────────────────────────────────────────────
       - name: Export template package
         shell: pwsh
         run: |
           .\scripts\templates\Export-DotnetCliTemplate.ps1 -Version "${{ steps.version.outputs.version }}"
 
+      # ── Tag release ───────────────────────────────────────────────────────────
       - name: Tag release and push
         shell: pwsh
         run: |
@@ -51,7 +66,36 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
+          Write-Host "Tagged: ${{ steps.version.outputs.tag }}"
 
+      # ── Merge main → develop ──────────────────────────────────────────────────
+      - name: Merge main back into develop
+        shell: pwsh
+        run: |
+          $developExists = git ls-remote --exit-code origin develop 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            Write-Warning "develop branch not found on origin — skipping merge-back."
+            exit 0
+          }
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin develop
+          git checkout develop
+          git pull --ff-only origin develop
+
+          $msg = "chore: merge release-${{ steps.version.outputs.version }} back to develop [skip ci]"
+          git merge origin/main --no-ff -m $msg
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Merge of main into develop failed — resolve conflicts manually."
+            exit 1
+          }
+
+          git push origin develop
+          Write-Host "develop updated with main (release ${{ steps.version.outputs.version }})."
+
+      # ── Publish to NuGet ──────────────────────────────────────────────────────
       - name: Push package to NuGet
         shell: pwsh
         env:
@@ -68,3 +112,4 @@ jobs:
             --source https://api.nuget.org/v3/index.json `
             --api-key $env:NUGET_API_KEY
           Write-Host "Published: $($pkg.Name)"
+

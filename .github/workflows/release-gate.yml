@@ -1,0 +1,130 @@
+name: Release Gate
+
+# Triggered when a PR review is submitted on any PR targeting main.
+# If the review is an approval on a release-* branch, this workflow:
+#   1. Checks that the release branch can be cleanly merged back to develop.
+#   2. Posts a status comment on the PR.
+#   3. If clean → auto-merges the PR into main using GH_PAT.
+#      (GH_PAT is required so that the merge event triggers the publish-release workflow.
+#       Merges made with GITHUB_TOKEN do NOT trigger subsequent workflow runs.)
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  gate:
+    name: Validate & Auto-Merge Release PR
+    # Only act on approvals for open release-* PRs targeting main.
+    if: |
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.state == 'open' &&
+      github.event.pull_request.base.ref == 'main' &&
+      startsWith(github.event.pull_request.head.ref, 'release-')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # GH_PAT is required here so the auto-merge in a later step
+          # fires the pull_request closed event that triggers publish-release.yml.
+          token: ${{ secrets.GH_PAT }}
+
+      # ── Extract metadata ──────────────────────────────────────────────────────
+      - name: Extract release metadata
+        id: meta
+        run: |
+          branch="${{ github.event.pull_request.head.ref }}"
+          version="${branch#release-}"
+          echo "branch=$branch"      >> "$GITHUB_OUTPUT"
+          echo "version=$version"    >> "$GITHUB_OUTPUT"
+          echo "tag=v$version"       >> "$GITHUB_OUTPUT"
+          echo "pr=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+
+      # ── Develop branch conflict check ─────────────────────────────────────────
+      - name: Check develop branch exists
+        id: develop
+        run: |
+          if git ls-remote --exit-code origin develop > /dev/null 2>&1; then
+            echo "exists=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate merge back to develop
+        id: conflict
+        if: steps.develop.outputs.exists == 'true'
+        run: |
+          git fetch origin develop
+          git fetch origin "${{ steps.meta.outputs.branch }}"
+
+          # Attempt a no-commit merge of the release branch onto develop.
+          git checkout develop
+          if git merge --no-commit --no-ff "origin/${{ steps.meta.outputs.branch }}" 2>&1; then
+            echo "has_conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_conflict=true"  >> "$GITHUB_OUTPUT"
+          fi
+          git merge --abort 2>/dev/null || true
+
+      # ── Comment: conflict detected ────────────────────────────────────────────
+      - name: Comment — merge conflict detected
+        if: steps.conflict.outputs.has_conflict == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: ${{ steps.meta.outputs.pr }},
+              body: [
+                '## ❌ Release Gate Failed',
+                '',
+                `Merging \`${{ steps.meta.outputs.branch }}\` back to \`develop\` would cause **conflicts**.`,
+                '',
+                'Please resolve the conflicts between this branch and `develop` before re-approving.',
+              ].join('\n')
+            });
+            core.setFailed('Conflict detected: release branch cannot be cleanly merged back to develop.');
+
+      # ── Comment: gate passed ──────────────────────────────────────────────────
+      - name: Comment — gate passed
+        # Run when no conflict exists (covers both: develop exists+clean, or develop missing)
+        if: steps.conflict.outputs.has_conflict != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const devExists = '${{ steps.develop.outputs.exists }}' === 'true';
+            const devLine   = devExists
+              ? '✅ No conflicts detected — `${{ steps.meta.outputs.branch }}` merges cleanly into `develop`.'
+              : '⚠️ `develop` branch not found — conflict pre-check skipped.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: ${{ steps.meta.outputs.pr }},
+              body: [
+                '## ✅ Release Gate Passed',
+                '',
+                devLine,
+                '',
+                '🚀 Merging `${{ steps.meta.outputs.branch }}` → `main`…',
+                '',
+                '_After merge, GitHub Actions will tag `${{ steps.meta.outputs.tag }}`, merge back to `develop`, and publish to NuGet._',
+              ].join('\n')
+            });
+
+      # ── Auto-merge PR into main ───────────────────────────────────────────────
+      - name: Auto-merge PR into main
+        if: steps.conflict.outputs.has_conflict != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          gh pr merge ${{ steps.meta.outputs.pr }} \
+            --repo "${{ github.repository }}"       \
+            --merge                                  \
+            --subject "Release ${{ steps.meta.outputs.tag }}"
