@@ -103,30 +103,56 @@ This is the primary script for creating a `.nupkg` template package from the sou
 
 ### 2. Publishing to NuGet (`Nuget-Published.ps1`)
 
-This script automates the entire release process for the `dotnet new` template pack. It runs the export script, commits version changes, creates a git tag, and pushes the package to NuGet.
+This script automates the publish pipeline in two modes: **develop** (pre-release) and **release** (stable).
 
-**Common Usage:**
+#### Develop mode
 
-- **Export, tag, and push to NuGet (requires `NUGET_API_KEY` env var):**
-  ```powershell
-  .\scripts\templates\Nuget-Published.ps1
-  ```
+Publishes a `-dev.x` pre-release to NuGet for testing. Requires a NuGet API key.
 
-- **Only export the package, without tagging or pushing:**
-  ```powershell
-  .\scripts\templates\Nuget-Published.ps1 -ExportOnly
-  ```
+```powershell
+# Key resolved automatically from the NUGET_API_KEY environment variable
+.\scripts\templates\Nuget-Published.ps1 -Mode develop
 
-- **Export and automatically commit/push version changes:**
-  ```powershell
-  .\scripts\templates\Nuget-Published.ps1 -AutoCommit -AutoPush
-  ```
+# Or pass the key explicitly
+.\scripts\templates\Nuget-Published.ps1 -Mode develop -NuGetApiKey "your-key"
+```
+
+What it does:
+1. Resolves `NUGET_API_KEY` (parameter → env var). Stops if missing.
+2. Computes the next `-dev.x` version (`10.0.2` → `10.0.3-dev.1`, `10.0.3-dev.1` → `10.0.3-dev.2`).
+3. Exports and packs the template bundle.
+4. Tags the dev version in git and pushes the tag.
+5. Publishes the `.nupkg` to NuGet.org.
+
+#### Release mode
+
+Creates a release branch + PR. Tagging and NuGet publish happen automatically after the PR is merged via GitHub Actions.
+
+```powershell
+# Requires the gh CLI to be installed and authenticated
+.\scripts\templates\Nuget-Published.ps1 -Mode release
+```
+
+What it does:
+1. Computes the clean release version (strips `-dev.x`, e.g. `10.0.3-dev.5` → `10.0.3`).
+2. Creates a `release-{version}` branch.
+3. Exports and packs the template bundle with the release version.
+4. Auto-generates a `CHANGELOG.md` entry from git commits since the last release tag.
+5. Commits `templatepack.config.json` + `CHANGELOG.md` to the release branch.
+6. Pushes the branch and opens a PR targeting `main` via the `gh` CLI.
+
+After the PR is merged, the **GitHub Actions** workflow (`.github/workflows/publish-release.yml`) automatically:
+- Tags `v{version}` and pushes the tag.
+- Packs and publishes `DMNSN.ProjectTemplates.{version}.nupkg` to NuGet.org.
+
+> **Prerequisite:** Add a `NUGET_API_KEY` secret to the repository settings for the Actions workflow to use.
 
 **Key Parameters:**
-- `-ExportOnly`: Runs the export process but skips git tagging and NuGet push.
-- `-AutoCommit`: Automatically commits changes to `templatepack.config.json` if the version was bumped.
-- `-AutoPush`: Pushes the auto-commit to the remote repository.
-- `-CommitMessage <string>`: A custom commit message (placeholders `{version}` and `{tag}` are available).
+- `-Mode <develop|release>`: Required. Selects the publish mode.
+- `-NuGetApiKey <string>`: NuGet API key override (develop mode). Falls back to `NUGET_API_KEY` env var.
+- `-Version <string>`: Override the computed version in either mode.
+- `-CommitMessage <string>`: Custom release-branch commit message. Supports `{version}` and `{tag}`.
+- `-PrTitle <string>`: Custom PR title (release mode).
 
 ## Template configuration
 

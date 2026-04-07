@@ -49,7 +49,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="DMNSN.Core" Version="8.0.1" />
+		<PackageReference Include="DMNSN.Core" Version="10.0.2" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="10.0.3" />

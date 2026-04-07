@@ -1,5 +1,5 @@
 {
-  "version": "10.0.1",
+  "version": "10.0.3-dev.3",
   "packageId": "DMNSN.ProjectTemplates",
   "title": "DMNSN Project Templates",
   "description": "Collection of DMNSN .NET project templates for dotnet new and Visual Studio.",
@@ -12,20 +12,20 @@
   "license": "LICENSE",
   "icon": "logo.png",
   "templates": {
-    "DMNSN.ConsoleApp.CSharp": {
-      "hash": "b75318f669bef01942ed179068fa219a7326df350458babeaefcecfa74a60440"
-    },
-    "DMNSN.WorkerApp.CSharp": {
-      "hash": "3e3dd693571dec25ca5b0beaea6695f25a9d7e7c91f1d7121ff3b3716977147d"
-    },
     "DMNSN.WebApi.GraphQl.CSharp": {
-      "hash": "fc9bb3a541618d3332d887d5bc035a90dac23ddcdd7a1308b2f01b68caae2cd9"
+      "hash": "87d36c96c25dbfd5199b558fc0ef3612082bac709829b981eca3c29fd639c630"
     },
     "DMNSN.ClassLibrary.CSharp": {
       "hash": "fd4b32396e05363831d6a4a3ef49b72674f55b4568eb75a51751f872f5c9311b"
     },
+    "DMNSN.WorkerApp.CSharp": {
+      "hash": "1c3c5d557abe912ced6c563109ba456dfad943d6e5d06b82bf2910b331344595"
+    },
+    "DMNSN.ConsoleApp.CSharp": {
+      "hash": "4c354dcf71ddca4ba02e7cf45f1562625e33c6722c627418490016f51e10be5e"
+    },
     "DMNSN.WebApi.Rest.CSharp": {
-      "hash": "b78c317173ce6a933792ce1f66a4b35a3d7e460fe3adfbbc8f73d29f64cb792a"
+      "hash": "1f2c4c5cdc10160bbf6640d0a80fca86feb2f2ae8c8e42ab9e19dbdb90a01b04"
     }
   }
 }

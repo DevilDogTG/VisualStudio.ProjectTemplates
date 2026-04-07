@@ -4,7 +4,7 @@
   "createInPlace": true,
   "createNewFolder": true,
   "defaultNamespace": "DMNSN.Templates.Projects.WebApiGraphQl",
-  "description": "A modern .NET 8 GraphQL API template using HotChocolate with schema-first configuration, logging, dependency injection, and configuration",
+  "description": "A modern .NET 10 GraphQL API template using HotChocolate with schema-first configuration, logging, dependency injection, and configuration",
   "enableLocationBrowseButton": true,
   "languageTag": "csharp",
   "platformTag": "windows",

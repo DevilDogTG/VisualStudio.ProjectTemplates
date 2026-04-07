@@ -586,7 +586,7 @@ if ($NoPack) {
     $templateProjectContent = @"
 <Project Sdk='Microsoft.NET.Sdk'>
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <PackageId>$PackageId</PackageId>
     <Version>$aggregatedVersion</Version>
     <PackageType>Template</PackageType>
@@ -597,6 +597,7 @@ if ($NoPack) {
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NoDefaultExcludes>true</NoDefaultExcludes>
     <EnableDefaultItems>false</EnableDefaultItems>
+    <NoWarn>NU5128</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <None Include='content\**\*' Pack='true' PackagePath='content/' />
