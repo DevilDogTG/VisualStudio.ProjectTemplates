@@ -1,0 +1,116 @@
+name: Feature Gate
+
+# Triggered when a PR review is submitted on any PR targeting develop.
+# If the review is an approval on a feature/* branch, this workflow:
+#   1. Checks that the feature branch can be cleanly merged into develop.
+#   2. Posts a status comment on the PR.
+#   3. If clean → auto-merges the PR into develop using GH_PAT.
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  gate:
+    name: Validate & Auto-Merge Feature PR
+    # Only act on approvals for open feature/* PRs targeting develop.
+    if: |
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.state == 'open' &&
+      github.event.pull_request.base.ref == 'develop' &&
+      (startsWith(github.event.pull_request.head.ref, 'feature/') ||
+       startsWith(github.event.pull_request.head.ref, 'features/') ||
+       startsWith(github.event.pull_request.head.ref, 'feat/'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      # ── Extract metadata ──────────────────────────────────────────────────────
+      - name: Extract PR metadata
+        id: meta
+        run: |
+          branch="${{ github.event.pull_request.head.ref }}"
+          pr="${{ github.event.pull_request.number }}"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "pr=$pr"         >> "$GITHUB_OUTPUT"
+
+          # Read the target version from templatepack.config.json on the feature branch.
+          git fetch origin "$branch"
+          git checkout "origin/$branch" -- templatepack.config.json 2>/dev/null || true
+          version="$(jq -r '.version // "unknown"' templatepack.config.json 2>/dev/null || echo 'unknown')"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Feature branch: $branch | Target version: $version"
+
+      # ── Conflict check ────────────────────────────────────────────────────────
+      - name: Validate merge into develop
+        id: conflict
+        run: |
+          git fetch origin develop
+          git fetch origin "${{ steps.meta.outputs.branch }}"
+
+          git checkout develop
+          if git merge --no-commit --no-ff "origin/${{ steps.meta.outputs.branch }}" 2>&1; then
+            echo "has_conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_conflict=true"  >> "$GITHUB_OUTPUT"
+          fi
+          git merge --abort 2>/dev/null || true
+
+      # ── Comment: conflict detected ────────────────────────────────────────────
+      - name: Comment — merge conflict detected
+        if: steps.conflict.outputs.has_conflict == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: ${{ steps.meta.outputs.pr }},
+              body: [
+                '## ❌ Feature Gate Failed',
+                '',
+                `Merging \`${{ steps.meta.outputs.branch }}\` into \`develop\` would cause **conflicts**.`,
+                '',
+                'Please resolve the conflicts before re-approving.',
+              ].join('\n')
+            });
+            core.setFailed('Conflict detected: feature branch cannot be cleanly merged into develop.');
+
+      # ── Comment: gate passed ──────────────────────────────────────────────────
+      - name: Comment — gate passed
+        if: steps.conflict.outputs.has_conflict != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: ${{ steps.meta.outputs.pr }},
+              body: [
+                '## ✅ Feature Gate Passed',
+                '',
+                '✅ No conflicts — `${{ steps.meta.outputs.branch }}` merges cleanly into `develop`.',
+                `📦 Target version locked: \`${{ steps.meta.outputs.version }}\``,
+                '',
+                '🚀 Merging `${{ steps.meta.outputs.branch }}` → `develop`…',
+              ].join('\n')
+            });
+
+      # ── Auto-merge PR into develop ────────────────────────────────────────────
+      - name: Auto-merge PR into develop
+        if: steps.conflict.outputs.has_conflict != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          gh pr merge ${{ steps.meta.outputs.pr }} \
+            --repo "${{ github.repository }}"       \
+            --merge                                  \
+            --subject "feat: merge ${{ steps.meta.outputs.branch }} (v${{ steps.meta.outputs.version }})"

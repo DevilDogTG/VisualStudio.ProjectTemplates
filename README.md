@@ -64,7 +64,35 @@ dotnet new uninstall DMNSN.ConsoleApp.CSharp
 
 This project includes PowerShell scripts to automate template creation, packaging, and publishing for `dotnet new`.
 
-### 1. Exporting and Packing (`Export-DotnetCliTemplate.ps1`)
+> **Version ownership:** The package version is set once — when a feature PR is created via `Feature-PullRequest.ps1`. All downstream steps (export, develop publish, release) consume that version without changing it.
+
+### 1. Creating a feature PR (`Feature-PullRequest.ps1`)
+
+Run this when your feature branch is ready for review. It bumps the version in `templatepack.config.json`, commits it, pushes the branch, and opens a PR targeting `develop`.
+
+```powershell
+# Default — bump patch version (e.g. 10.0.2 → 10.0.3)
+.\scripts\templates\Feature-PullRequest.ps1
+
+# Bump minor version (e.g. 10.0.2 → 10.1.0)
+.\scripts\templates\Feature-PullRequest.ps1 -BumpMinor
+
+# Bump major version (e.g. 10.0.2 → 11.0.0)
+.\scripts\templates\Feature-PullRequest.ps1 -BumpMajor
+
+# Open as a draft PR
+.\scripts\templates\Feature-PullRequest.ps1 -Draft
+```
+
+**Key Parameters:**
+- `-BumpMinor`: Bumps the minor version, resets patch to 0.
+- `-BumpMajor`: Bumps the major version, resets minor and patch to 0.
+- `-Version <string>`: Explicit target version, skips auto-bump.
+- `-Title <string>`: PR title. Supports `{version}`, `{branch}`, `{tag}` placeholders.
+- `-Body <string>`: PR body text. Supports the same placeholders.
+- `-Draft`: Opens the PR as a draft.
+
+### 2. Exporting and Packing (`Export-DotnetCliTemplate.ps1`)
 
 This is the primary script for creating a `.nupkg` template package from the source projects. It reads `template.config.json` from each project, generates `template.json` files, and bundles them into a NuGet package.
 
@@ -203,26 +231,48 @@ Once both secrets are set, navigate to **Settings → Secrets and variables → 
 ### Workflow overview
 
 ```
-developer runs:  Nuget-Published.ps1 -Mode release
-                         │
-                         ▼
-            Creates release-{version} branch
-            Generates CHANGELOG.md entry
-            Opens PR  release-{version} → main
-                         │
-              reviewer approves the PR
-                         │
-                         ▼
-         [release-gate.yml] triggered
-            ✓ conflict check with develop
-            ✓ auto-merges PR → main  (uses GH_PAT)
-                         │
-                         ▼
-         [publish-release.yml] triggered
-            ✓ export & pack .nupkg
-            ✓ git tag v{version}
-            ✓ merge main → develop
-            ✓ dotnet nuget push
+┌─────────────────────────────────────────────────────────────────┐
+│  FEATURE  (feature/* branch)                                    │
+│                                                                 │
+│  developer runs: Feature-PullRequest.ps1 [-BumpMinor|-BumpMajor]│
+│    → bumps version in templatepack.config.json                  │
+│    → commits, pushes, opens PR  feature/* → develop            │
+│                           │                                     │
+│              reviewer approves the PR                           │
+│                           │                                     │
+│                           ▼                                     │
+│         [feature-gate.yml]                                      │
+│            ✓ conflict check with develop                        │
+│            ✓ auto-merges PR → develop  (uses GH_PAT)           │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                ┌───────────┘  (optionally: develop -dev.x builds)
+                │  developer runs: Nuget-Published.ps1 -Mode develop
+                │    → tags v{version}-dev.x, publishes pre-release
+                │
+                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  RELEASE  (release/* branch)                                    │
+│                                                                 │
+│  developer runs: Nuget-Published.ps1 -Mode release              │
+│    → strips -dev.x, creates release-{version} branch           │
+│    → generates CHANGELOG.md entry                               │
+│    → commits, pushes, opens PR  release-{version} → main       │
+│                           │                                     │
+│              reviewer approves the PR                           │
+│                           │                                     │
+│                           ▼                                     │
+│         [release-gate.yml]                                      │
+│            ✓ conflict check with develop                        │
+│            ✓ auto-merges PR → main  (uses GH_PAT)              │
+│                           │                                     │
+│                           ▼                                     │
+│         [publish-release.yml]                                   │
+│            ✓ export & pack .nupkg                               │
+│            ✓ git tag v{version}                                 │
+│            ✓ merge main → develop                               │
+│            ✓ dotnet nuget push                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Template configuration

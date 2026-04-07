@@ -508,21 +508,19 @@ if ($selectedTemplateCount -eq 0) {
 $sortedTemplateSummaries = $templateSummaries | Sort-Object -Property @{ Expression = { $_.TemplateName }; Ascending = $true }, @{ Expression = { $_.ProjectName }; Ascending = $true }
 $templateNames = @($sortedTemplateSummaries | ForEach-Object { $_.TemplateName } | Where-Object { $_ })
 
-# Determine aggregated package version using running config
+# Determine aggregated package version using running config.
+# NOTE: The version is now owned by Feature-PullRequest.ps1 and set at feature PR time.
+#       This script never silently bumps the version — it always uses the value already
+#       in templatepack.config.json unless an explicit -Version override is provided.
 $currentAggregateVersion = if ($aggregateConfig.version) { [string]$aggregateConfig.version } else { "1.0.0" }
 if ($Version) {
     $aggregatedVersion = $Version
     Log ("?? Aggregate package version (override): {0}" -f $aggregatedVersion)
 } else {
+    $aggregatedVersion = $currentAggregateVersion
     if ($anyTemplateChanged) {
-        # bump patch version
-        $vparts = ($currentAggregateVersion -split '\.')
-        if ($vparts.Length -lt 3) { $vparts = @($vparts + (0..(2 - $vparts.Length) | ForEach-Object { '0' })) }
-        $vparts[2] = [int]$vparts[2] + 1
-        $aggregatedVersion = "{0}.{1}.{2}" -f $vparts[0], $vparts[1], $vparts[2]
-        Log ("?? Aggregate version bumped: {0} -> {1}" -f $currentAggregateVersion, $aggregatedVersion) "Green"
+        Log ("?? Aggregate version: {0} (template changes detected — version already set by feature branch)" -f $aggregatedVersion) "Green"
     } else {
-        $aggregatedVersion = $currentAggregateVersion
         Log ("?? Aggregate version unchanged: {0}" -f $aggregatedVersion) "DarkGray"
     }
 }
