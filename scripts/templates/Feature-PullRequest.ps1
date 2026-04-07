@@ -171,24 +171,24 @@ Write-Host "  Branch pushed." -ForegroundColor Green
 
 Write-Host "`nStep 4: Creating pull request → $targetBranch..." -ForegroundColor Cyan
 
-$defaultTitle = "feat: {branch} → v{version}"
-$finalTitle   = Expand-Placeholders -Template (if ($Title) { $Title } else { $defaultTitle }) `
-                                    -Ver $newVersion -Branch $currentBranch
+$defaultTitle  = "feat: {branch} → v{version}"
+$titleTemplate = if ($Title) { $Title } else { $defaultTitle }
+$finalTitle    = Expand-Placeholders -Template $titleTemplate -Ver $newVersion -Branch $currentBranch
 
 $defaultBody = @"
 ## Feature: {branch}
 
-**Target version:** \`{version}\`
+**Target version:** ``{version}``
 
 ### Changes
 <!-- Describe what this feature does -->
 
 ---
-_Version \`{version}\` will be locked once this PR is merged to \`develop\`._
-_A subsequent release PR will promote it to \`main\` and publish to NuGet._
+_Version ``{version}`` will be locked once this PR is merged to ``develop``._
+_A subsequent release PR will promote it to ``main`` and publish to NuGet._
 "@
-$finalBody = Expand-Placeholders -Template (if ($Body) { $Body } else { $defaultBody }) `
-                                 -Ver $newVersion -Branch $currentBranch
+$bodyTemplate = if ($Body) { $Body } else { $defaultBody }
+$finalBody    = Expand-Placeholders -Template $bodyTemplate -Ver $newVersion -Branch $currentBranch
 
 $prArgs = @(
     "pr", "create",
