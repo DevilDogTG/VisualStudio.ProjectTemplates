@@ -1,5 +1,5 @@
 {
-  "version": "10.0.3-dev.3",
+  "version": "10.0.4",
   "packageId": "DMNSN.ProjectTemplates",
   "title": "DMNSN Project Templates",
   "description": "Collection of DMNSN .NET project templates for dotnet new and Visual Studio.",
